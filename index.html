@@ -28,11 +28,15 @@
       background: #222;
       color: white;
       border: none;
-      padding: 15px 25px;
+      padding: 12px 20px;
       border-radius: 10px;
-      font-size: 18px;
+      font-size: 17px;
       cursor: pointer;
-      margin: 10px;
+      margin: 5px;
+    }
+
+    .delete {
+      background: #c62828;
     }
 
     #reader {
@@ -42,7 +46,23 @@
 
     #result {
       margin-top: 20px;
-      font-size: 20px;
+      font-size: 19px;
+    }
+
+    .cart {
+      margin-top: 25px;
+      text-align: right;
+    }
+
+    .item {
+      border-bottom: 1px solid #ddd;
+      padding: 12px 5px;
+    }
+
+    .total {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -53,8 +73,6 @@
 
   <h1>🛒 متجر الطلاب</h1>
 
-  <p>نظام البيع</p>
-
   <button onclick="startScanner()">
     📷 مسح الباركود
   </button>
@@ -62,7 +80,21 @@
   <div id="reader"></div>
 
   <div id="result">
-    اضغط على زر مسح الباركود
+    اضغط على مسح الباركود
+  </div>
+
+  <div class="cart">
+
+    <h2>🛒 السلة</h2>
+
+    <div id="cartItems">
+      لا توجد منتجات
+    </div>
+
+    <div class="total">
+      المجموع: <span id="total">0</span>
+    </div>
+
   </div>
 
 </div>
@@ -70,6 +102,18 @@
 <script>
 
 let scanner = null;
+
+let cart = [];
+
+const products = {
+
+  "001": {
+    name: "قلم",
+    price: 5
+  }
+
+};
+
 
 function startScanner() {
 
@@ -90,38 +134,18 @@ function startScanner() {
       }
     },
 
-function(decodedText) {
+    function(decodedText) {
 
-  const products = {
-    "001": {
-      name: "قلم",
-      price: 5
-    }
-  };
+      addProduct(decodedText);
 
-  const product = products[decodedText];
+      scanner.stop();
 
-  if (product) {
-
-    document.getElementById("result").innerHTML =
-      "✅ تم العثور على المنتج<br><br>" +
-      "<strong>" + product.name + "</strong><br>" +
-      "السعر: " + product.price;
-
-  } else {
-
-    document.getElementById("result").innerHTML =
-      "❌ هذا الباركود غير مسجل<br><br>" +
-      "الباركود: " + decodedText;
-
-  }
-
-  scanner.stop();
-
-},
+    },
 
     function(errorMessage) {
+
       // تجاهل أخطاء القراءة المؤقتة
+
     }
 
   ).catch(function(error) {
@@ -131,6 +155,162 @@ function(decodedText) {
       error;
 
   });
+
+}
+
+
+function addProduct(barcode) {
+
+  const product = products[barcode];
+
+  if (!product) {
+
+    document.getElementById("result").innerHTML =
+      "❌ هذا الباركود غير مسجل";
+
+    return;
+
+  }
+
+
+  const existing = cart.find(
+    item => item.barcode === barcode
+  );
+
+
+  if (existing) {
+
+    existing.quantity++;
+
+  } else {
+
+    cart.push({
+
+      barcode: barcode,
+
+      name: product.name,
+
+      price: product.price,
+
+      quantity: 1
+
+    });
+
+  }
+
+
+  document.getElementById("result").innerHTML =
+    "✅ تمت إضافة " + product.name;
+
+  showCart();
+
+}
+
+
+function deleteProduct(index) {
+
+  cart.splice(index, 1);
+
+  showCart();
+
+}
+
+
+function changeQuantity(index, amount) {
+
+  cart[index].quantity += amount;
+
+  if (cart[index].quantity <= 0) {
+
+    cart.splice(index, 1);
+
+  }
+
+  showCart();
+
+}
+
+
+function showCart() {
+
+  const container =
+    document.getElementById("cartItems");
+
+  if (cart.length === 0) {
+
+    container.innerHTML =
+      "لا توجد منتجات";
+
+    document.getElementById("total").innerText = "0";
+
+    return;
+
+  }
+
+
+  let html = "";
+
+  let total = 0;
+
+
+  cart.forEach(function(item, index) {
+
+    const itemTotal =
+      item.price * item.quantity;
+
+    total += itemTotal;
+
+
+    html += `
+
+      <div class="item">
+
+        <strong>${item.name}</strong>
+
+        <br>
+
+        السعر: ${item.price}
+
+        <br>
+
+        الكمية:
+
+        <button onclick="changeQuantity(${index}, -1)">
+          −
+        </button>
+
+        ${item.quantity}
+
+        <button onclick="changeQuantity(${index}, 1)">
+          +
+        </button>
+
+        <br>
+
+        المجموع:
+        ${itemTotal}
+
+        <br>
+
+        <button
+          class="delete"
+          onclick="deleteProduct(${index})">
+
+          🗑️ حذف
+
+        </button>
+
+      </div>
+
+    `;
+
+  });
+
+
+  container.innerHTML = html;
+
+  document.getElementById("total").innerText =
+    total;
 
 }
 
