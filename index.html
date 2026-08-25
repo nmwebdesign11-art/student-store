@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>متجر الطلاب</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
+
     body {
       font-family: Arial, sans-serif;
       background: #f5f5f5;
@@ -39,6 +46,12 @@
       background: #c62828;
     }
 
+    .invoice-button {
+      background: #1769aa;
+      width: 100%;
+      margin-top: 20px;
+    }
+
     #reader {
       width: 100%;
       margin-top: 20px;
@@ -64,10 +77,44 @@
       font-weight: bold;
       margin-top: 20px;
     }
+
+    #invoice {
+      margin-top: 25px;
+      text-align: right;
+    }
+
+    .invoice-box {
+      border: 2px solid #222;
+      border-radius: 15px;
+      padding: 20px;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .print-button {
+      width: 100%;
+      margin-top: 20px;
+    }
+
   </style>
+
 </head>
 
+
 <body>
+
 
 <div class="container">
 
@@ -77,37 +124,58 @@
     📷 مسح الباركود
   </button>
 
+
   <div id="reader"></div>
 
+
   <div id="result">
-    اضغط على مسح الباركود
+    اضغط على زر مسح الباركود
   </div>
+
 
   <div class="cart">
 
     <h2>🛒 السلة</h2>
 
+
     <div id="cartItems">
       لا توجد منتجات
     </div>
 
-    <div class="total">
-      المجموع: <span id="total">0</span>
-    </div>
-<button onclick="createInvoice()">
-  🧾 إصدار الفاتورة
-</button>
 
-<div id="invoice"></div>
+    <div class="total">
+
+      المجموع:
+      <span id="total">0</span>
+
+    </div>
+
+
+    <button
+      class="invoice-button"
+      onclick="createInvoice()"
+    >
+
+      🧾 إصدار الفاتورة
+
+    </button>
+
+
+    <div id="invoice"></div>
+
   </div>
 
 </div>
 
+
 <script>
+
 
 let scanner = null;
 
+
 let cart = [];
+
 
 const products = {
 
@@ -119,32 +187,45 @@ const products = {
 };
 
 
+
+/* =========================
+   تشغيل الكاميرا
+========================= */
+
 function startScanner() {
 
   document.getElementById("result").innerHTML =
     "جاري تشغيل الكاميرا...";
 
+
   scanner = new Html5Qrcode("reader");
 
+
   scanner.start(
+
     {
       facingMode: "environment"
     },
+
     {
       fps: 10,
+
       qrbox: {
         width: 250,
         height: 150
       }
     },
 
+
     function(decodedText) {
 
       addProduct(decodedText);
 
+
       scanner.stop();
 
     },
+
 
     function(errorMessage) {
 
@@ -152,9 +233,13 @@ function startScanner() {
 
     }
 
-  ).catch(function(error) {
+  )
+
+
+  .catch(function(error) {
 
     document.getElementById("result").innerHTML =
+
       "❌ لم نستطع تشغيل الكاميرا<br><br>" +
       error;
 
@@ -163,14 +248,23 @@ function startScanner() {
 }
 
 
+
+/* =========================
+   إضافة المنتج
+========================= */
+
 function addProduct(barcode) {
 
   const product = products[barcode];
 
+
   if (!product) {
 
     document.getElementById("result").innerHTML =
-      "❌ هذا الباركود غير مسجل";
+
+      "❌ هذا الباركود غير مسجل<br><br>" +
+
+      "الباركود: " + barcode;
 
     return;
 
@@ -178,7 +272,9 @@ function addProduct(barcode) {
 
 
   const existing = cart.find(
+
     item => item.barcode === barcode
+
   );
 
 
@@ -186,7 +282,9 @@ function addProduct(barcode) {
 
     existing.quantity++;
 
-  } else {
+  }
+
+  else {
 
     cart.push({
 
@@ -204,12 +302,19 @@ function addProduct(barcode) {
 
 
   document.getElementById("result").innerHTML =
+
     "✅ تمت إضافة " + product.name;
+
 
   showCart();
 
 }
 
+
+
+/* =========================
+   حذف منتج
+========================= */
 
 function deleteProduct(index) {
 
@@ -220,9 +325,15 @@ function deleteProduct(index) {
 }
 
 
+
+/* =========================
+   تغيير الكمية
+========================= */
+
 function changeQuantity(index, amount) {
 
   cart[index].quantity += amount;
+
 
   if (cart[index].quantity <= 0) {
 
@@ -230,127 +341,52 @@ function changeQuantity(index, amount) {
 
   }
 
+
   showCart();
 
 }
 
 
+
+/* =========================
+   عرض السلة
+========================= */
+
 function showCart() {
 
   const container =
+
     document.getElementById("cartItems");
+
 
   if (cart.length === 0) {
 
     container.innerHTML =
       "لا توجد منتجات";
 
-    document.getElementById("total").innerText = "0";
+
+    document.getElementById("total").innerText =
+      "0";
+
 
     return;
 
   }
 
-function createInvoice() {
 
-  if (cart.length === 0) {
-
-    alert("السلة فارغة");
-
-    return;
-  }
-
-  const invoiceNumber =
-    Date.now();
-
-  const date =
-    new Date().toLocaleString("ar");
-
-  let total = 0;
-
-  let rows = "";
-
-  cart.forEach(function(item) {
-
-    const itemTotal =
-      item.price * item.quantity;
-
-    total += itemTotal;
-
-    rows += `
-      <tr>
-        <td>${item.name}</td>
-        <td>${item.quantity}</td>
-        <td>${item.price}</td>
-        <td>${itemTotal}</td>
-      </tr>
-    `;
-
-  });
-
-
-  document.getElementById("invoice").innerHTML = `
-
-    <div style="
-      margin-top:25px;
-      padding:20px;
-      border:2px solid #222;
-      border-radius:15px;
-      background:white;
-    ">
-
-      <h2>🧾 فاتورة شراء</h2>
-
-      <p>
-        رقم الفاتورة:
-        <strong>${invoiceNumber}</strong>
-      </p>
-
-      <p>
-        التاريخ:
-        ${date}
-      </p>
-
-      <table style="
-        width:100%;
-        border-collapse:collapse;
-        margin-top:15px;
-      ">
-
-        <tr>
-          <th>المنتج</th>
-          <th>الكمية</th>
-          <th>السعر</th>
-          <th>المجموع</th>
-        </tr>
-
-        ${rows}
-
-      </table>
-
-      <h2>
-        المجموع النهائي:
-        ${total}
-      </h2>
-
-      <button onclick="window.print()">
-        🖨️ طباعة الفاتورة
-      </button>
-
-    </div>
-
-  `;
-
-}
   let html = "";
+
 
   let total = 0;
 
 
   cart.forEach(function(item, index) {
 
+
     const itemTotal =
+
       item.price * item.quantity;
+
 
     total += itemTotal;
 
@@ -359,36 +395,44 @@ function createInvoice() {
 
       <div class="item">
 
-        <strong>${item.name}</strong>
+        <strong>
+          ${item.name}
+        </strong>
 
-        <br>
+        <br><br>
 
-        السعر: ${item.price}
+        السعر:
+        ${item.price}
 
-        <br>
+        <br><br>
 
         الكمية:
 
-        <button onclick="changeQuantity(${index}, -1)">
+        <button
+          onclick="changeQuantity(${index}, -1)"
+        >
           −
         </button>
 
         ${item.quantity}
 
-        <button onclick="changeQuantity(${index}, 1)">
+        <button
+          onclick="changeQuantity(${index}, 1)"
+        >
           +
         </button>
 
-        <br>
+        <br><br>
 
-        المجموع:
+        مجموع المنتج:
         ${itemTotal}
 
         <br>
 
         <button
           class="delete"
-          onclick="deleteProduct(${index})">
+          onclick="deleteProduct(${index})"
+        >
 
           🗑️ حذف
 
@@ -403,12 +447,167 @@ function createInvoice() {
 
   container.innerHTML = html;
 
+
   document.getElementById("total").innerText =
     total;
 
 }
 
+
+
+/* =========================
+   إصدار الفاتورة
+========================= */
+
+function createInvoice() {
+
+
+  if (cart.length === 0) {
+
+    alert("السلة فارغة");
+
+    return;
+
+  }
+
+
+  const invoiceNumber =
+
+    Date.now();
+
+
+  const date =
+
+    new Date().toLocaleString("ar");
+
+
+  let total = 0;
+
+
+  let rows = "";
+
+
+  cart.forEach(function(item) {
+
+
+    const itemTotal =
+
+      item.price * item.quantity;
+
+
+    total += itemTotal;
+
+
+    rows += `
+
+      <tr>
+
+        <td>
+          ${item.name}
+        </td>
+
+        <td>
+          ${item.quantity}
+        </td>
+
+        <td>
+          ${item.price}
+        </td>
+
+        <td>
+          ${itemTotal}
+        </td>
+
+      </tr>
+
+    `;
+
+  });
+
+
+  document.getElementById("invoice").innerHTML = `
+
+    <div class="invoice-box">
+
+      <h2>
+        🧾 فاتورة شراء
+      </h2>
+
+
+      <p>
+
+        رقم الفاتورة:
+
+        <strong>
+          ${invoiceNumber}
+        </strong>
+
+      </p>
+
+
+      <p>
+
+        التاريخ:
+
+        ${date}
+
+      </p>
+
+
+      <table>
+
+        <tr>
+
+          <th>
+            المنتج
+          </th>
+
+          <th>
+            الكمية
+          </th>
+
+          <th>
+            السعر
+          </th>
+
+          <th>
+            المجموع
+          </th>
+
+        </tr>
+
+        ${rows}
+
+      </table>
+
+
+      <h2>
+
+        المجموع النهائي:
+        ${total}
+
+      </h2>
+
+
+      <button
+        class="print-button"
+        onclick="window.print()"
+      >
+
+        🖨️ طباعة الفاتورة
+
+      </button>
+
+    </div>
+
+  `;
+
+}
+
+
 </script>
 
+
 </body>
+
 </html>
