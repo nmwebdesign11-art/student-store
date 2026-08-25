@@ -21,6 +21,7 @@
       background: #f5f5f5;
       text-align: center;
       padding: 20px;
+      margin: 0;
     }
 
     .container {
@@ -42,12 +43,21 @@
       margin: 5px;
     }
 
+    button:active {
+      transform: scale(0.97);
+    }
+
     .delete {
       background: #c62828;
     }
 
     .invoice-button {
       background: #1769aa;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .print-button {
       width: 100%;
       margin-top: 20px;
     }
@@ -69,7 +79,7 @@
 
     .item {
       border-bottom: 1px solid #ddd;
-      padding: 12px 5px;
+      padding: 15px 5px;
     }
 
     .total {
@@ -103,9 +113,30 @@
       text-align: center;
     }
 
-    .print-button {
-      width: 100%;
-      margin-top: 20px;
+    .status {
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    @media print {
+
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      body > .container {
+        display: none;
+      }
+
+      #invoice {
+        display: block;
+      }
+
+      .print-button {
+        display: none;
+      }
+
     }
 
   </style>
@@ -120,13 +151,19 @@
 
   <h1>🛒 متجر الطلاب</h1>
 
-  <p id="loading">
+
+  <div
+    id="loading"
+    class="status"
+  >
     جاري تحميل المنتجات...
-  </p>
+  </div>
 
 
   <button onclick="startScanner()">
+
     📷 مسح الباركود
+
   </button>
 
 
@@ -134,7 +171,9 @@
 
 
   <div id="result">
+
     اضغط على زر مسح الباركود
+
   </div>
 
 
@@ -144,13 +183,16 @@
 
 
     <div id="cartItems">
+
       لا توجد منتجات
+
     </div>
 
 
     <div class="total">
 
       المجموع:
+
       <span id="total">0</span>
 
     </div>
@@ -176,93 +218,117 @@
 <script>
 
 
-/* =========================
+/* =====================================
    رابط Google Apps Script
-========================= */
+===================================== */
 
 const PRODUCTS_URL =
   "https://script.google.com/macros/s/AKfycbxdnSfXqUNxR3QVwUxdCxxWfY9V9ZNssXV8UsQnplTJP7JFJDzBKMTAvhkDI1WHDckv/exec";
 
 
+/* =====================================
+   المتغيرات
+===================================== */
+
 let scanner = null;
 
-
 let cart = [];
-
 
 let products = {};
 
 
-
-/* =========================
+/* =====================================
    تحميل المنتجات
-========================= */
+===================================== */
 
 async function loadProducts() {
 
-  const script = document.createElement("script");
+  try {
 
-  script.src =
-    PRODUCTS_URL + "?callback=receiveProducts";
-
-  document.body.appendChild(script);
-
-}
+    const response =
+      await fetch(PRODUCTS_URL);
 
 
-function receiveProducts(data) {
+    if (!response.ok) {
 
-  products = {};
+      throw new Error(
+        "HTTP " + response.status
+      );
 
-  data.forEach(function(product) {
-
-    products[product.barcode] = {
-
-      name: product.name,
-
-      price: product.price,
-
-      stock: product.stock
-
-    };
-
-  });
+    }
 
 
-  document.getElementById("loading").innerHTML =
-    "✅ تم تحميل المنتجات: " + data.length;
+    const data =
+      await response.json();
 
-}
+
+    products = {};
+
+
+    data.forEach(function(product) {
+
+      const barcode =
+        String(product.barcode).trim();
+
+
+      products[barcode] = {
+
+        name: product.name,
+
+        price: Number(product.price),
+
+        stock: Number(product.stock)
+
+      };
+
+    });
+
+
+    document.getElementById("loading").innerHTML =
+
+      "✅ تم تحميل المنتجات: " +
+      data.length;
+
+
+  }
 
   catch (error) {
 
+    console.error(error);
+
+
     document.getElementById("loading").innerHTML =
+
       "❌ تعذر تحميل المنتجات";
 
 
-    console.error(error);
+    document.getElementById("result").innerHTML =
+
+      "تأكد من اتصال الإنترنت ثم أعد تحميل الصفحة.";
 
   }
 
 }
 
 
-
-/* تحميل المنتجات عند فتح التطبيق */
+/* تشغيل تحميل المنتجات */
 
 loadProducts();
 
 
 
-/* =========================
+/* =====================================
    تشغيل الكاميرا
-========================= */
+===================================== */
 
-function startScanner() {
+async function startScanner() {
+
 
   if (Object.keys(products).length === 0) {
 
-    alert("لم يتم تحميل المنتجات بعد");
+    alert(
+      "لم يتم تحميل المنتجات بعد"
+    );
 
     return;
 
@@ -270,10 +336,29 @@ function startScanner() {
 
 
   document.getElementById("result").innerHTML =
-    "جاري تشغيل الكاميرا...";
+
+    "📷 جاري تشغيل الكاميرا...";
 
 
-  scanner = new Html5Qrcode("reader");
+  if (scanner) {
+
+    try {
+
+      await scanner.stop();
+
+    }
+
+    catch (e) {
+
+      // لا شيء
+
+    }
+
+  }
+
+
+  scanner =
+    new Html5Qrcode("reader");
 
 
   scanner.start(
@@ -292,12 +377,26 @@ function startScanner() {
     },
 
 
-    function(decodedText) {
-
-      addProduct(decodedText);
+    async function(decodedText) {
 
 
-      scanner.stop();
+      await addProduct(decodedText);
+
+
+      try {
+
+        await scanner.stop();
+
+      }
+
+      catch (e) {
+
+        // لا شيء
+
+      }
+
+
+      document.getElementById("reader").innerHTML = "";
 
     },
 
@@ -313,10 +412,12 @@ function startScanner() {
 
   .catch(function(error) {
 
+    console.error(error);
+
+
     document.getElementById("result").innerHTML =
 
-      "❌ لم نستطع تشغيل الكاميرا<br><br>" +
-      error;
+      "❌ لم نستطع تشغيل الكاميرا";
 
   });
 
@@ -324,13 +425,19 @@ function startScanner() {
 
 
 
-/* =========================
-   إضافة المنتج
-========================= */
+/* =====================================
+   إضافة المنتج للسلة
+===================================== */
 
 function addProduct(barcode) {
 
-  const product = products[barcode];
+
+  barcode =
+    String(barcode).trim();
+
+
+  const product =
+    products[barcode];
 
 
   if (!product) {
@@ -339,18 +446,23 @@ function addProduct(barcode) {
 
       "❌ هذا الباركود غير مسجل<br><br>" +
 
-      "الباركود: " + barcode;
+      "الباركود: <strong>" +
+
+      barcode +
+
+      "</strong>";
 
     return;
 
   }
 
 
-  const existing = cart.find(
+  const existing =
+    cart.find(function(item) {
 
-    item => item.barcode === barcode
+      return item.barcode === barcode;
 
-  );
+    });
 
 
   if (existing) {
@@ -378,7 +490,11 @@ function addProduct(barcode) {
 
   document.getElementById("result").innerHTML =
 
-    "✅ تمت إضافة " + product.name;
+    "✅ تمت إضافة <strong>" +
+
+    product.name +
+
+    "</strong>";
 
 
   showCart();
@@ -387,9 +503,9 @@ function addProduct(barcode) {
 
 
 
-/* =========================
+/* =====================================
    حذف منتج
-========================= */
+===================================== */
 
 function deleteProduct(index) {
 
@@ -401,11 +517,19 @@ function deleteProduct(index) {
 
 
 
-/* =========================
+/* =====================================
    تغيير الكمية
-========================= */
+===================================== */
 
 function changeQuantity(index, amount) {
+
+
+  if (!cart[index]) {
+
+    return;
+
+  }
+
 
   cart[index].quantity += amount;
 
@@ -423,11 +547,12 @@ function changeQuantity(index, amount) {
 
 
 
-/* =========================
+/* =====================================
    عرض السلة
-========================= */
+===================================== */
 
 function showCart() {
+
 
   const container =
     document.getElementById("cartItems");
@@ -450,7 +575,6 @@ function showCart() {
 
   let html = "";
 
-
   let total = 0;
 
 
@@ -471,6 +595,11 @@ function showCart() {
         <strong>
           ${item.name}
         </strong>
+
+        <br><br>
+
+        الباركود:
+        ${item.barcode}
 
         <br><br>
 
@@ -498,7 +627,7 @@ function showCart() {
         <br><br>
 
         مجموع المنتج:
-        ${itemTotal}
+        <strong>${itemTotal}</strong>
 
         <br>
 
@@ -518,7 +647,8 @@ function showCart() {
   });
 
 
-  container.innerHTML = html;
+  container.innerHTML =
+    html;
 
 
   document.getElementById("total").innerText =
@@ -528,201 +658,70 @@ function showCart() {
 
 
 
-/* =========================
-   إصدار الفاتورة
-========================= */
+/* =====================================
+   إصدار وحفظ الفاتورة
+===================================== */
 
 async function createInvoice() {
 
+
   if (cart.length === 0) {
+
     alert("السلة فارغة");
+
     return;
-  }
-
-  const invoiceNumber = Date.now();
-
-  const now = new Date();
-
-  const date = now.toLocaleDateString("ar");
-
-  const time = now.toLocaleTimeString("ar");
-
-  let total = 0;
-
-  let rows = "";
-
-  let productNames = [];
-
-  let quantities = [];
-
-
-  cart.forEach(function(item) {
-
-    const itemTotal =
-      item.price * item.quantity;
-
-    total += itemTotal;
-
-    productNames.push(item.name);
-
-    quantities.push(item.quantity);
-
-
-    rows += `
-      <tr>
-        <td>${item.name}</td>
-        <td>${item.quantity}</td>
-        <td>${item.price}</td>
-        <td>${itemTotal}</td>
-      </tr>
-    `;
-
-  });
-
-
-  /* إرسال الفاتورة إلى Google Sheets */
-
-  const invoiceData = {
-
-    invoiceNumber: invoiceNumber,
-
-    date: date,
-
-    products: productNames.join("، "),
-
-    quantities: quantities.join("، "),
-
-    total: total,
-
-    time: time
-
-  };
-
-
-  try {
-
-    await fetch(PRODUCTS_URL, {
-
-      method: "POST",
-
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-
-      body: JSON.stringify(invoiceData)
-
-    });
-
-
-    document.getElementById("invoice").innerHTML = `
-
-      <div class="invoice-box">
-
-        <h2>🧾 فاتورة شراء</h2>
-
-        <p>
-          رقم الفاتورة:
-          <strong>${invoiceNumber}</strong>
-        </p>
-
-        <p>
-          التاريخ:
-          ${date}
-        </p>
-
-        <p>
-          الوقت:
-          ${time}
-        </p>
-
-
-        <table>
-
-          <tr>
-            <th>المنتج</th>
-            <th>الكمية</th>
-            <th>السعر</th>
-            <th>المجموع</th>
-          </tr>
-
-          ${rows}
-
-        </table>
-
-
-        <h2>
-          المجموع النهائي: ${total}
-        </h2>
-
-
-        <p>
-          ✅ تم حفظ الفاتورة
-        </p>
-
-
-        <button
-          class="print-button"
-          onclick="window.print()"
-        >
-          🖨️ طباعة الفاتورة
-        </button>
-
-      </div>
-
-    `;
-
-
-  } catch (error) {
-
-    document.getElementById("invoice").innerHTML = `
-
-      <div class="invoice-box">
-
-        <h2>🧾 الفاتورة</h2>
-
-        <p>
-          ⚠️ تم إنشاء الفاتورة ولكن تعذر حفظها في الجدول.
-        </p>
-
-        <p>
-          الخطأ:
-          ${error}
-        </p>
-
-      </div>
-
-    `;
 
   }
-
-}
 
 
   const invoiceNumber =
     Date.now();
 
 
+  const now =
+    new Date();
+
+
   const date =
-    new Date().toLocaleString("ar");
+    now.toLocaleDateString("ar");
+
+
+  const time =
+    now.toLocaleTimeString("ar");
 
 
   let total = 0;
 
+  let rows = [];
 
-  let rows = "";
+
+  const productNames = [];
+
+  const quantities = [];
 
 
   cart.forEach(function(item) {
 
 
     const itemTotal =
-      item.price * item.quantity;
+      item.price *
+      item.quantity;
 
 
     total += itemTotal;
 
 
-    rows += `
+    productNames.push(
+      item.name
+    );
+
+
+    quantities.push(
+      item.quantity
+    );
+
+
+    rows.push(`
 
       <tr>
 
@@ -744,9 +743,32 @@ async function createInvoice() {
 
       </tr>
 
-    `;
+    `);
 
   });
+
+
+  const invoiceData = {
+
+    invoiceNumber:
+      invoiceNumber,
+
+    date:
+      date,
+
+    products:
+      productNames.join("، "),
+
+    quantities:
+      quantities.join("، "),
+
+    total:
+      total,
+
+    time:
+      time
+
+  };
 
 
   document.getElementById("invoice").innerHTML = `
@@ -754,72 +776,178 @@ async function createInvoice() {
     <div class="invoice-box">
 
       <h2>
-        🧾 فاتورة شراء
+        🧾 جاري حفظ الفاتورة...
       </h2>
-
-
-      <p>
-
-        رقم الفاتورة:
-
-        <strong>
-          ${invoiceNumber}
-        </strong>
-
-      </p>
-
-
-      <p>
-
-        التاريخ:
-
-        ${date}
-
-      </p>
-
-
-      <table>
-
-        <tr>
-
-          <th>المنتج</th>
-
-          <th>الكمية</th>
-
-          <th>السعر</th>
-
-          <th>المجموع</th>
-
-        </tr>
-
-        ${rows}
-
-      </table>
-
-
-      <h2>
-
-        المجموع النهائي:
-        ${total}
-
-      </h2>
-
-
-      <button
-        class="print-button"
-        onclick="window.print()"
-      >
-
-        🖨️ طباعة الفاتورة
-
-      </button>
 
     </div>
 
   `;
 
-}
 
+  try {
+
+
+    await fetch(
+
+      PRODUCTS_URL,
+
+      {
+
+        method: "POST",
+
+        headers: {
+
+          "Content-Type":
+            "text/plain;charset=utf-8"
+
+        },
+
+        body:
+          JSON.stringify(
+            invoiceData
+          )
+
+      }
+
+    );
+
+
+    let invoiceRows =
+      rows.join("");
+
+
+    document.getElementById("invoice").innerHTML = `
+
+      <div class="invoice-box">
+
+        <h2>
+          🧾 فاتورة شراء
+        </h2>
+
+
+        <p>
+
+          رقم الفاتورة:
+
+          <strong>
+            ${invoiceNumber}
+          </strong>
+
+        </p>
+
+
+        <p>
+
+          التاريخ:
+          ${date}
+
+        </p>
+
+
+        <p>
+
+          الوقت:
+          ${time}
+
+        </p>
+
+
+        <table>
+
+          <tr>
+
+            <th>
+              المنتج
+            </th>
+
+            <th>
+              الكمية
+            </th>
+
+            <th>
+              السعر
+            </th>
+
+            <th>
+              المجموع
+            </th>
+
+          </tr>
+
+
+          ${invoiceRows}
+
+        </table>
+
+
+        <h2>
+
+          المجموع النهائي:
+          ${total}
+
+        </h2>
+
+
+        <p>
+
+          ✅ تم إصدار الفاتورة
+
+        </p>
+
+
+        <button
+          class="print-button"
+          onclick="window.print()"
+        >
+
+          🖨️ طباعة الفاتورة
+
+        </button>
+
+      </div>
+
+    `;
+
+
+  }
+
+  catch (error) {
+
+
+    console.error(error);
+
+
+    document.getElementById("invoice").innerHTML = `
+
+      <div class="invoice-box">
+
+        <h2>
+          🧾 الفاتورة
+        </h2>
+
+
+        <p>
+
+          ⚠️ تم إنشاء الفاتورة،
+          لكن تعذر حفظها في Google Sheets.
+
+        </p>
+
+
+        <p>
+
+          الخطأ:
+          ${error}
+
+        </p>
+
+      </div>
+
+    `;
+
+  }
+
+}
 
 </script>
 
