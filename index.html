@@ -114,6 +114,14 @@
       margin: 10px 0;
     }
 
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: #c62828;
+    }
+
     @media print {
 
       body {
@@ -263,22 +271,15 @@ async function loadProducts() {
 
     data.forEach(function(product) {
 
-      /*
-       * جدول Google Sheets:
-       *
-       * 1 = قلم
-       * 2 = ممحاة
-       * 3 = دفتر
-       *
-       * والباركود:
-       *
-       * 001
-       * 002
-       * 003
-       */
-
       const productNumber =
         parseInt(product.barcode, 10);
+
+
+      if (isNaN(productNumber)) {
+
+        return;
+
+      }
 
 
       const barcode =
@@ -320,6 +321,11 @@ async function loadProducts() {
     document.getElementById("loading").innerHTML =
 
       "❌ تعذر تحميل المنتجات";
+
+
+    document.getElementById("result").innerHTML =
+
+      "تأكد من اتصال الإنترنت ثم أعد تحميل الصفحة.";
 
   }
 
@@ -388,8 +394,7 @@ async function startScanner() {
 
     async function(decodedText) {
 
-
-      await addProduct(decodedText);
+      addProduct(decodedText);
 
 
       try {
@@ -793,198 +798,170 @@ async function createInvoice() {
   };
 
 
+  /* =====================================
+     عرض الفاتورة مباشرة
+  ===================================== */
+
   document.getElementById("invoice").innerHTML = `
 
     <div class="invoice-box">
 
       <h2>
-        🧾 جاري حفظ الفاتورة...
+        🧾 فاتورة شراء
       </h2>
+
+      <p>
+
+        رقم الفاتورة:
+
+        <strong>
+          ${invoiceNumber}
+        </strong>
+
+      </p>
+
+      <p>
+
+        التاريخ:
+        ${date}
+
+      </p>
+
+      <p>
+
+        الوقت:
+        ${time}
+
+      </p>
+
+
+      <table>
+
+        <tr>
+
+          <th>
+            المنتج
+          </th>
+
+          <th>
+            الكمية
+          </th>
+
+          <th>
+            السعر
+          </th>
+
+          <th>
+            المجموع
+          </th>
+
+        </tr>
+
+
+        ${rows.join("")}
+
+      </table>
+
+
+      <h2>
+
+        المجموع النهائي:
+        ${total}
+
+      </h2>
+
+
+      <div
+        id="saveStatus"
+        class="status"
+      >
+
+        ⏳ جاري حفظ الفاتورة...
+
+      </div>
+
+
+      <button
+        class="print-button"
+        onclick="window.print()"
+      >
+
+        🖨️ طباعة الفاتورة
+
+      </button>
 
     </div>
 
   `;
 
 
-  try {
+  /* =====================================
+     إرسال الفاتورة إلى Google Apps Script
+  ===================================== */
 
+  fetch(
 
-    /*
-     * إرسال الفاتورة إلى Google Apps Script.
-     *
-     * نستخدم no-cors حتى لا يمنع المتصفح
-     * عملية الإرسال.
-     *
-     * لا نحاول قراءة response لأن no-cors
-     * لا يسمح بقراءة الرد.
-     */
+    PRODUCTS_URL,
 
-    await fetch(
+    {
 
-      PRODUCTS_URL,
+      method: "POST",
 
-      {
+      headers: {
 
-        method: "POST",
+        "Content-Type":
+          "text/plain;charset=utf-8"
 
-        mode: "no-cors",
+      },
 
-        headers: {
+      body:
+        JSON.stringify(
+          invoiceData
+        )
 
-          "Content-Type":
-            "text/plain;charset=utf-8"
+    }
 
-        },
+  )
 
-        body:
-          JSON.stringify(
-            invoiceData
-          )
+  .then(function(response) {
 
-      }
+    return response.text();
 
+  })
+
+  .then(function(result) {
+
+    console.log(
+      "رد Google Apps Script:",
+      result
     );
 
 
-    /*
-     * إذا وصلنا إلى هنا فقد تم إرسال
-     * طلب الحفظ إلى Google Apps Script.
-     */
+    document.getElementById(
+      "saveStatus"
+    ).innerHTML =
 
-    document.getElementById("invoice").innerHTML = `
+      "✅ تم إرسال الفاتورة للحفظ";
 
-      <div class="invoice-box">
+  })
 
-        <h2>
-          🧾 فاتورة شراء
-        </h2>
+  .catch(function(error) {
 
-
-        <p>
-
-          رقم الفاتورة:
-
-          <strong>
-            ${invoiceNumber}
-          </strong>
-
-        </p>
+    console.error(
+      "خطأ في إرسال الفاتورة:",
+      error
+    );
 
 
-        <p>
+    document.getElementById(
+      "saveStatus"
+    ).innerHTML =
 
-          التاريخ:
-          ${date}
+      "⚠️ ظهرت الفاتورة، لكن حدث خطأ أثناء إرسالها للحفظ";
 
-        </p>
-
-
-        <p>
-
-          الوقت:
-          ${time}
-
-        </p>
-
-
-        <table>
-
-          <tr>
-
-            <th>
-              المنتج
-            </th>
-
-            <th>
-              الكمية
-            </th>
-
-            <th>
-              السعر
-            </th>
-
-            <th>
-              المجموع
-            </th>
-
-          </tr>
-
-
-          ${rows.join("")}
-
-        </table>
-
-
-        <h2>
-
-          المجموع النهائي:
-          ${total}
-
-        </h2>
-
-
-        <p>
-
-          ✅ تم إصدار الفاتورة
-
-        </p>
-
-
-        <button
-          class="print-button"
-          onclick="window.print()"
-        >
-
-          🖨️ طباعة الفاتورة
-
-        </button>
-
-
-      </div>
-
-    `;
-
-
-  }
-
-
-  catch (error) {
-
-
-    console.error(error);
-
-
-    document.getElementById("invoice").innerHTML = `
-
-      <div class="invoice-box">
-
-        <h2>
-          🧾 الفاتورة
-        </h2>
-
-
-        <p>
-
-          ⚠️ تعذر إرسال الفاتورة.
-
-        </p>
-
-
-        <p>
-
-          الخطأ:
-          ${error}
-
-        </p>
-
-      </div>
-
-    `;
-
-  }
+  });
 
 }
-
 
 </script>
 
