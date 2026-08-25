@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
@@ -14,131 +15,217 @@
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
+
   <style>
 
     body {
+
       font-family: Arial, sans-serif;
+
       background: #f5f5f5;
+
       text-align: center;
+
       padding: 20px;
+
       margin: 0;
+
     }
+
 
     .container {
+
       max-width: 600px;
+
       margin: auto;
+
       background: white;
+
       padding: 20px;
+
       border-radius: 15px;
+
     }
+
 
     button {
+
       background: #222;
+
       color: white;
+
       border: none;
+
       padding: 12px 20px;
+
       border-radius: 10px;
+
       font-size: 17px;
+
       cursor: pointer;
+
       margin: 5px;
+
     }
+
 
     .delete {
+
       background: #c62828;
+
     }
+
 
     .invoice-button {
+
       background: #1769aa;
+
       width: 100%;
+
       margin-top: 20px;
+
     }
+
 
     .print-button {
+
       width: 100%;
+
       margin-top: 20px;
+
     }
+
 
     #reader {
+
       width: 100%;
+
       margin-top: 20px;
+
     }
+
 
     #result {
+
       margin-top: 20px;
+
       font-size: 19px;
+
     }
+
 
     .cart {
+
       margin-top: 25px;
+
       text-align: right;
+
     }
+
 
     .item {
+
       border-bottom: 1px solid #ddd;
+
       padding: 15px 5px;
+
     }
+
 
     .total {
+
       font-size: 24px;
+
       font-weight: bold;
+
       margin-top: 20px;
+
     }
+
 
     #invoice {
+
       margin-top: 25px;
+
       text-align: right;
+
     }
+
 
     .invoice-box {
+
       border: 2px solid #222;
+
       border-radius: 15px;
+
       padding: 20px;
+
       background: white;
+
     }
 
+
     table {
+
       width: 100%;
+
       border-collapse: collapse;
+
       margin-top: 15px;
+
     }
+
 
     th,
     td {
+
       border: 1px solid #ccc;
+
       padding: 8px;
+
       text-align: center;
+
     }
+
 
     .status {
+
       font-weight: bold;
+
       margin: 10px 0;
+
     }
 
-    .success {
-      color: green;
-    }
-
-    .error {
-      color: #c62828;
-    }
 
     @media print {
 
       body {
+
         background: white;
+
         padding: 0;
+
       }
+
 
       .container {
+
         display: none;
+
       }
+
 
       #invoice {
+
         display: block;
+
       }
 
+
       .print-button {
+
         display: none;
+
       }
 
     }
@@ -153,6 +240,7 @@
 
 <div class="container">
 
+
   <h1>🛒 متجر الطلاب</h1>
 
 
@@ -160,7 +248,9 @@
     id="loading"
     class="status"
   >
+
     جاري تحميل المنتجات...
+
   </div>
 
 
@@ -183,6 +273,7 @@
 
   <div class="cart">
 
+
     <h2>🛒 السلة</h2>
 
 
@@ -197,7 +288,9 @@
 
       المجموع:
 
-      <span id="total">0</span>
+      <span id="total">
+        0
+      </span>
 
     </div>
 
@@ -214,9 +307,21 @@
 
     <div id="invoice"></div>
 
+
   </div>
 
+
 </div>
+
+
+<!--
+  إطار مخفي لاستقبال رد Google Apps Script
+-->
+
+<iframe
+  name="invoiceSaveFrame"
+  style="display:none;"
+></iframe>
 
 
 <script>
@@ -271,8 +376,12 @@ async function loadProducts() {
 
     data.forEach(function(product) {
 
+
       const productNumber =
-        parseInt(product.barcode, 10);
+        parseInt(
+          product.barcode,
+          10
+        );
 
 
       if (isNaN(productNumber)) {
@@ -282,8 +391,17 @@ async function loadProducts() {
       }
 
 
+      /*
+       * تحويل:
+       *
+       * 1  -> 001
+       * 2  -> 002
+       * 3  -> 003
+       */
+
       const barcode =
-        String(productNumber).padStart(3, "0");
+        String(productNumber)
+          .padStart(3, "0");
 
 
       products[barcode] = {
@@ -302,10 +420,13 @@ async function loadProducts() {
 
       };
 
+
     });
 
 
-    document.getElementById("loading").innerHTML =
+    document.getElementById(
+      "loading"
+    ).innerHTML =
 
       "✅ تم تحميل المنتجات: " +
       data.length;
@@ -318,14 +439,11 @@ async function loadProducts() {
     console.error(error);
 
 
-    document.getElementById("loading").innerHTML =
+    document.getElementById(
+      "loading"
+    ).innerHTML =
 
       "❌ تعذر تحميل المنتجات";
-
-
-    document.getElementById("result").innerHTML =
-
-      "تأكد من اتصال الإنترنت ثم أعد تحميل الصفحة.";
 
   }
 
@@ -342,7 +460,9 @@ loadProducts();
 async function startScanner() {
 
 
-  if (Object.keys(products).length === 0) {
+  if (
+    Object.keys(products).length === 0
+  ) {
 
     alert(
       "لم يتم تحميل المنتجات بعد"
@@ -353,7 +473,9 @@ async function startScanner() {
   }
 
 
-  document.getElementById("result").innerHTML =
+  document.getElementById(
+    "result"
+  ).innerHTML =
 
     "📷 جاري تشغيل الكاميرا...";
 
@@ -385,14 +507,18 @@ async function startScanner() {
       fps: 10,
 
       qrbox: {
+
         width: 250,
+
         height: 150
+
       }
 
     },
 
 
     async function(decodedText) {
+
 
       addProduct(decodedText);
 
@@ -406,7 +532,9 @@ async function startScanner() {
       catch (e) {}
 
 
-      document.getElementById("reader").innerHTML = "";
+      document.getElementById(
+        "reader"
+      ).innerHTML = "";
 
     },
 
@@ -425,7 +553,9 @@ async function startScanner() {
     console.error(error);
 
 
-    document.getElementById("result").innerHTML =
+    document.getElementById(
+      "result"
+    ).innerHTML =
 
       "❌ لم نستطع تشغيل الكاميرا";
 
@@ -450,7 +580,9 @@ function addProduct(barcode) {
 
   if (isNaN(number)) {
 
-    document.getElementById("result").innerHTML =
+    document.getElementById(
+      "result"
+    ).innerHTML =
 
       "❌ باركود غير صالح";
 
@@ -459,8 +591,17 @@ function addProduct(barcode) {
   }
 
 
+  /*
+   * تحويل الباركود إلى 3 أرقام
+   *
+   * 1   -> 001
+   * 2   -> 002
+   * 3   -> 003
+   */
+
   const normalizedBarcode =
-    String(number).padStart(3, "0");
+    String(number)
+      .padStart(3, "0");
 
 
   const product =
@@ -469,7 +610,9 @@ function addProduct(barcode) {
 
   if (!product) {
 
-    document.getElementById("result").innerHTML =
+    document.getElementById(
+      "result"
+    ).innerHTML =
 
       "❌ هذا الباركود غير مسجل<br><br>" +
 
@@ -487,7 +630,10 @@ function addProduct(barcode) {
   const existing =
     cart.find(function(item) {
 
-      return item.barcode === normalizedBarcode;
+      return (
+        item.barcode ===
+        normalizedBarcode
+      );
 
     });
 
@@ -520,7 +666,9 @@ function addProduct(barcode) {
   }
 
 
-  document.getElementById("result").innerHTML =
+  document.getElementById(
+    "result"
+  ).innerHTML =
 
     "✅ تمت إضافة <strong>" +
 
@@ -535,7 +683,7 @@ function addProduct(barcode) {
 
 
 /* =====================================
-   حذف منتج
+   حذف المنتج
 ===================================== */
 
 function deleteProduct(index) {
@@ -551,7 +699,10 @@ function deleteProduct(index) {
    تغيير الكمية
 ===================================== */
 
-function changeQuantity(index, amount) {
+function changeQuantity(
+  index,
+  amount
+) {
 
 
   if (!cart[index]) {
@@ -561,10 +712,13 @@ function changeQuantity(index, amount) {
   }
 
 
-  cart[index].quantity += amount;
+  cart[index].quantity +=
+    amount;
 
 
-  if (cart[index].quantity <= 0) {
+  if (
+    cart[index].quantity <= 0
+  ) {
 
     cart.splice(index, 1);
 
@@ -584,7 +738,9 @@ function showCart() {
 
 
   const container =
-    document.getElementById("cartItems");
+    document.getElementById(
+      "cartItems"
+    );
 
 
   if (cart.length === 0) {
@@ -593,8 +749,9 @@ function showCart() {
       "لا توجد منتجات";
 
 
-    document.getElementById("total").innerText =
-      "0";
+    document.getElementById(
+      "total"
+    ).innerText = "0";
 
 
     return;
@@ -607,79 +764,92 @@ function showCart() {
   let total = 0;
 
 
-  cart.forEach(function(item, index) {
+  cart.forEach(
+    function(item, index) {
 
 
-    const itemTotal =
-      item.price *
-      item.quantity;
+      const itemTotal =
+        item.price *
+        item.quantity;
 
 
-    total += itemTotal;
+      total +=
+        itemTotal;
 
 
-    html += `
+      html += `
 
-      <div class="item">
+        <div class="item">
 
-        <strong>
-          ${item.name}
-        </strong>
+          <strong>
+            ${item.name}
+          </strong>
 
-        <br><br>
+          <br><br>
 
-        السعر:
-        ${item.price}
+          السعر:
+          ${item.price}
 
-        <br><br>
+          <br><br>
 
-        الكمية:
+          الكمية:
 
-        <button
-          onclick="changeQuantity(${index}, -1)"
-        >
-          −
-        </button>
+          <button
+            onclick="changeQuantity(
+              ${index},
+              -1
+            )"
+          >
+            −
+          </button>
 
-        ${item.quantity}
+          ${item.quantity}
 
-        <button
-          onclick="changeQuantity(${index}, 1)"
-        >
-          +
-        </button>
+          <button
+            onclick="changeQuantity(
+              ${index},
+              1
+            )"
+          >
+            +
+          </button>
 
-        <br><br>
+          <br><br>
 
-        مجموع المنتج:
+          مجموع المنتج:
 
-        <strong>
-          ${itemTotal}
-        </strong>
+          <strong>
+            ${itemTotal}
+          </strong>
 
-        <br>
+          <br>
 
-        <button
-          class="delete"
-          onclick="deleteProduct(${index})"
-        >
+          <button
+            class="delete"
+            onclick="deleteProduct(
+              ${index}
+            )"
+          >
 
-          🗑️ حذف
+            🗑️ حذف
 
-        </button>
+          </button>
 
-      </div>
+        </div>
 
-    `;
+      `;
 
-  });
+    }
+  );
 
 
   container.innerHTML =
     html;
 
 
-  document.getElementById("total").innerText =
+  document.getElementById(
+    "total"
+  ).innerText =
     total;
 
 }
@@ -689,12 +859,14 @@ function showCart() {
    إصدار الفاتورة
 ===================================== */
 
-async function createInvoice() {
+function createInvoice() {
 
 
   if (cart.length === 0) {
 
-    alert("السلة فارغة");
+    alert(
+      "السلة فارغة"
+    );
 
     return;
 
@@ -727,52 +899,55 @@ async function createInvoice() {
   const quantities = [];
 
 
-  cart.forEach(function(item) {
+  cart.forEach(
+    function(item) {
 
 
-    const itemTotal =
-      item.price *
-      item.quantity;
+      const itemTotal =
+        item.price *
+        item.quantity;
 
 
-    total += itemTotal;
+      total +=
+        itemTotal;
 
 
-    productNames.push(
-      item.name
-    );
+      productNames.push(
+        item.name
+      );
 
 
-    quantities.push(
-      item.quantity
-    );
+      quantities.push(
+        item.quantity
+      );
 
 
-    rows.push(`
+      rows.push(`
 
-      <tr>
+        <tr>
 
-        <td>
-          ${item.name}
-        </td>
+          <td>
+            ${item.name}
+          </td>
 
-        <td>
-          ${item.quantity}
-        </td>
+          <td>
+            ${item.quantity}
+          </td>
 
-        <td>
-          ${item.price}
-        </td>
+          <td>
+            ${item.price}
+          </td>
 
-        <td>
-          ${itemTotal}
-        </td>
+          <td>
+            ${itemTotal}
+          </td>
 
-      </tr>
+        </tr>
 
-    `);
+      `);
 
-  });
+    }
+  );
 
 
   const invoiceData = {
@@ -799,16 +974,19 @@ async function createInvoice() {
 
 
   /* =====================================
-     عرض الفاتورة مباشرة
+     عرض الفاتورة فورًا
   ===================================== */
 
-  document.getElementById("invoice").innerHTML = `
+  document.getElementById(
+    "invoice"
+  ).innerHTML = `
 
     <div class="invoice-box">
 
       <h2>
         🧾 فاتورة شراء
       </h2>
+
 
       <p>
 
@@ -820,12 +998,14 @@ async function createInvoice() {
 
       </p>
 
+
       <p>
 
         التاريخ:
         ${date}
 
       </p>
+
 
       <p>
 
@@ -890,78 +1070,103 @@ async function createInvoice() {
 
       </button>
 
+
     </div>
 
   `;
 
 
   /* =====================================
-     إرسال الفاتورة إلى Google Apps Script
+     إرسال الفاتورة إلى Apps Script
+     باستخدام نموذج مخفي
   ===================================== */
 
-  fetch(
-
-    PRODUCTS_URL,
-
-    {
-
-      method: "POST",
-
-      headers: {
-
-        "Content-Type":
-          "text/plain;charset=utf-8"
-
-      },
-
-      body:
-        JSON.stringify(
-          invoiceData
-        )
-
-    }
-
-  )
-
-  .then(function(response) {
-
-    return response.text();
-
-  })
-
-  .then(function(result) {
-
-    console.log(
-      "رد Google Apps Script:",
-      result
+  const form =
+    document.createElement(
+      "form"
     );
 
 
-    document.getElementById(
-      "saveStatus"
-    ).innerHTML =
+  form.method =
+    "POST";
 
-      "✅ تم إرسال الفاتورة للحفظ";
 
-  })
+  form.action =
+    PRODUCTS_URL;
 
-  .catch(function(error) {
 
-    console.error(
-      "خطأ في إرسال الفاتورة:",
-      error
+  form.target =
+    "invoiceSaveFrame";
+
+
+  form.style.display =
+    "none";
+
+
+  const input =
+    document.createElement(
+      "input"
     );
 
 
-    document.getElementById(
-      "saveStatus"
-    ).innerHTML =
+  input.type =
+    "hidden";
 
-      "⚠️ ظهرت الفاتورة، لكن حدث خطأ أثناء إرسالها للحفظ";
 
-  });
+  input.name =
+    "invoiceData";
+
+
+  input.value =
+    JSON.stringify(
+      invoiceData
+    );
+
+
+  form.appendChild(
+    input
+  );
+
+
+  document.body.appendChild(
+    form
+  );
+
+
+  /*
+   * إرسال البيانات
+   */
+
+  form.submit();
+
+
+  /*
+   * لا نحذف النموذج فورًا.
+   * نتركه فترة حتى يتم إرسال الطلب.
+   */
+
+  setTimeout(
+    function() {
+
+      form.remove();
+
+    },
+    5000
+  );
+
+
+  /*
+   * تحديث الرسالة
+   */
+
+  document.getElementById(
+    "saveStatus"
+  ).innerHTML =
+
+    "✅ تم إرسال الفاتورة للحفظ";
 
 }
+
 
 </script>
 
@@ -969,3 +1174,4 @@ async function createInvoice() {
 </body>
 
 </html>
+```
