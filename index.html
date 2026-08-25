@@ -2,20 +2,14 @@
 <html lang="ar" dir="rtl">
 
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>متجر الطلاب</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-
     body {
       font-family: Arial, sans-serif;
       background: #f5f5f5;
@@ -41,10 +35,6 @@
       font-size: 17px;
       cursor: pointer;
       margin: 5px;
-    }
-
-    button:active {
-      transform: scale(0.97);
     }
 
     .delete {
@@ -119,13 +109,12 @@
     }
 
     @media print {
-
       body {
         background: white;
         padding: 0;
       }
 
-      body > .container {
+      .container {
         display: none;
       }
 
@@ -136,77 +125,50 @@
       .print-button {
         display: none;
       }
-
     }
-
   </style>
 
 </head>
 
-
 <body>
-
 
 <div class="container">
 
   <h1>🛒 متجر الطلاب</h1>
 
-
-  <div
-    id="loading"
-    class="status"
-  >
+  <div id="loading" class="status">
     جاري تحميل المنتجات...
   </div>
 
-
   <button onclick="startScanner()">
-
     📷 مسح الباركود
-
   </button>
-
 
   <div id="reader"></div>
 
-
   <div id="result">
-
     اضغط على زر مسح الباركود
-
   </div>
-
 
   <div class="cart">
 
     <h2>🛒 السلة</h2>
 
-
     <div id="cartItems">
-
       لا توجد منتجات
-
     </div>
-
 
     <div class="total">
-
       المجموع:
-
       <span id="total">0</span>
-
     </div>
-
 
     <button
       class="invoice-button"
       onclick="createInvoice()"
     >
-
       🧾 إصدار الفاتورة
-
     </button>
-
 
     <div id="invoice"></div>
 
@@ -217,7 +179,6 @@
 
 <script>
 
-
 /* =====================================
    رابط Google Apps Script
 ===================================== */
@@ -225,10 +186,6 @@
 const PRODUCTS_URL =
   "https://script.google.com/macros/s/AKfycbxdnSfXqUNxR3QVwUxdCxxWfY9V9ZNssXV8UsQnplTJP7JFJDzBKMTAvhkDI1WHDckv/exec";
 
-
-/* =====================================
-   المتغيرات
-===================================== */
 
 let scanner = null;
 
@@ -248,27 +205,30 @@ async function loadProducts() {
     const response =
       await fetch(PRODUCTS_URL);
 
-
-    if (!response.ok) {
-
-      throw new Error(
-        "HTTP " + response.status
-      );
-
-    }
-
-
     const data =
       await response.json();
 
-
     products = {};
-
 
     data.forEach(function(product) {
 
+      /*
+       * جدولنا يحتوي:
+       * 1 = قلم
+       * 2 = ممحاة
+       * 3 = دفتر
+       *
+       * والباركود يكون:
+       * 001
+       * 002
+       * 003
+       */
+
+      const productNumber =
+        parseInt(product.barcode, 10);
+
       const barcode =
-        String(product.barcode).trim();
+        String(productNumber).padStart(3, "0");
 
 
       products[barcode] = {
@@ -277,7 +237,9 @@ async function loadProducts() {
 
         price: Number(product.price),
 
-        stock: Number(product.stock)
+        stock: Number(product.stock),
+
+        productNumber: productNumber
 
       };
 
@@ -285,10 +247,7 @@ async function loadProducts() {
 
 
     document.getElementById("loading").innerHTML =
-
-      "✅ تم تحميل المنتجات: " +
-      data.length;
-
+      "✅ تم تحميل المنتجات: " + data.length;
 
   }
 
@@ -296,25 +255,15 @@ async function loadProducts() {
 
     console.error(error);
 
-
     document.getElementById("loading").innerHTML =
-
       "❌ تعذر تحميل المنتجات";
-
-
-    document.getElementById("result").innerHTML =
-
-      "تأكد من اتصال الإنترنت ثم أعد تحميل الصفحة.";
 
   }
 
 }
 
 
-/* تشغيل تحميل المنتجات */
-
 loadProducts();
-
 
 
 /* =====================================
@@ -323,36 +272,25 @@ loadProducts();
 
 async function startScanner() {
 
-
   if (Object.keys(products).length === 0) {
 
-    alert(
-      "لم يتم تحميل المنتجات بعد"
-    );
+    alert("لم يتم تحميل المنتجات بعد");
 
     return;
-
   }
 
 
   document.getElementById("result").innerHTML =
-
     "📷 جاري تشغيل الكاميرا...";
 
 
   if (scanner) {
 
     try {
-
       await scanner.stop();
-
     }
 
-    catch (e) {
-
-      // لا شيء
-
-    }
+    catch (e) {}
 
   }
 
@@ -376,30 +314,21 @@ async function startScanner() {
       }
     },
 
-
     async function(decodedText) {
-
 
       await addProduct(decodedText);
 
 
       try {
-
         await scanner.stop();
-
       }
 
-      catch (e) {
-
-        // لا شيء
-
-      }
+      catch (e) {}
 
 
       document.getElementById("reader").innerHTML = "";
 
     },
-
 
     function(errorMessage) {
 
@@ -409,14 +338,11 @@ async function startScanner() {
 
   )
 
-
   .catch(function(error) {
 
     console.error(error);
 
-
     document.getElementById("result").innerHTML =
-
       "❌ لم نستطع تشغيل الكاميرا";
 
   });
@@ -424,20 +350,39 @@ async function startScanner() {
 }
 
 
-
 /* =====================================
-   إضافة المنتج للسلة
+   إضافة المنتج
 ===================================== */
 
 function addProduct(barcode) {
 
+  /*
+   * تحويل أي شكل للرقم إلى 001
+   *
+   * 1     → 001
+   * 01    → 001
+   * 001   → 001
+   */
 
-  barcode =
-    String(barcode).trim();
+  const number =
+    parseInt(String(barcode).trim(), 10);
+
+
+  if (isNaN(number)) {
+
+    document.getElementById("result").innerHTML =
+      "❌ باركود غير صالح";
+
+    return;
+  }
+
+
+  const normalizedBarcode =
+    String(number).padStart(3, "0");
 
 
   const product =
-    products[barcode];
+    products[normalizedBarcode];
 
 
   if (!product) {
@@ -448,19 +393,18 @@ function addProduct(barcode) {
 
       "الباركود: <strong>" +
 
-      barcode +
+      normalizedBarcode +
 
       "</strong>";
 
     return;
-
   }
 
 
   const existing =
     cart.find(function(item) {
 
-      return item.barcode === barcode;
+      return item.barcode === normalizedBarcode;
 
     });
 
@@ -475,7 +419,7 @@ function addProduct(barcode) {
 
     cart.push({
 
-      barcode: barcode,
+      barcode: normalizedBarcode,
 
       name: product.name,
 
@@ -491,16 +435,13 @@ function addProduct(barcode) {
   document.getElementById("result").innerHTML =
 
     "✅ تمت إضافة <strong>" +
-
     product.name +
-
     "</strong>";
 
 
   showCart();
 
 }
-
 
 
 /* =====================================
@@ -516,18 +457,14 @@ function deleteProduct(index) {
 }
 
 
-
 /* =====================================
    تغيير الكمية
 ===================================== */
 
 function changeQuantity(index, amount) {
 
-
   if (!cart[index]) {
-
     return;
-
   }
 
 
@@ -546,13 +483,11 @@ function changeQuantity(index, amount) {
 }
 
 
-
 /* =====================================
    عرض السلة
 ===================================== */
 
 function showCart() {
-
 
   const container =
     document.getElementById("cartItems");
@@ -563,13 +498,10 @@ function showCart() {
     container.innerHTML =
       "لا توجد منتجات";
 
-
     document.getElementById("total").innerText =
       "0";
 
-
     return;
-
   }
 
 
@@ -579,7 +511,6 @@ function showCart() {
 
 
   cart.forEach(function(item, index) {
-
 
     const itemTotal =
       item.price * item.quantity;
@@ -595,11 +526,6 @@ function showCart() {
         <strong>
           ${item.name}
         </strong>
-
-        <br><br>
-
-        الباركود:
-        ${item.barcode}
 
         <br><br>
 
@@ -627,7 +553,9 @@ function showCart() {
         <br><br>
 
         مجموع المنتج:
-        <strong>${itemTotal}</strong>
+        <strong>
+          ${itemTotal}
+        </strong>
 
         <br>
 
@@ -635,9 +563,7 @@ function showCart() {
           class="delete"
           onclick="deleteProduct(${index})"
         >
-
           🗑️ حذف
-
         </button>
 
       </div>
@@ -657,20 +583,17 @@ function showCart() {
 }
 
 
-
 /* =====================================
-   إصدار وحفظ الفاتورة
+   إصدار الفاتورة
 ===================================== */
 
 async function createInvoice() {
-
 
   if (cart.length === 0) {
 
     alert("السلة فارغة");
 
     return;
-
   }
 
 
@@ -702,10 +625,8 @@ async function createInvoice() {
 
   cart.forEach(function(item) {
 
-
     const itemTotal =
-      item.price *
-      item.quantity;
+      item.price * item.quantity;
 
 
     total += itemTotal;
@@ -776,7 +697,7 @@ async function createInvoice() {
     <div class="invoice-box">
 
       <h2>
-        🧾 جاري حفظ الفاتورة...
+        🧾 جاري إصدار الفاتورة...
       </h2>
 
     </div>
@@ -785,7 +706,6 @@ async function createInvoice() {
 
 
   try {
-
 
     await fetch(
 
@@ -803,17 +723,11 @@ async function createInvoice() {
         },
 
         body:
-          JSON.stringify(
-            invoiceData
-          )
+          JSON.stringify(invoiceData)
 
       }
 
     );
-
-
-    let invoiceRows =
-      rows.join("");
 
 
     document.getElementById("invoice").innerHTML = `
@@ -824,98 +738,63 @@ async function createInvoice() {
           🧾 فاتورة شراء
         </h2>
 
-
         <p>
-
           رقم الفاتورة:
-
           <strong>
             ${invoiceNumber}
           </strong>
-
         </p>
 
-
         <p>
-
           التاريخ:
           ${date}
-
         </p>
-
 
         <p>
-
           الوقت:
           ${time}
-
         </p>
-
 
         <table>
 
           <tr>
 
-            <th>
-              المنتج
-            </th>
-
-            <th>
-              الكمية
-            </th>
-
-            <th>
-              السعر
-            </th>
-
-            <th>
-              المجموع
-            </th>
+            <th>المنتج</th>
+            <th>الكمية</th>
+            <th>السعر</th>
+            <th>المجموع</th>
 
           </tr>
 
-
-          ${invoiceRows}
+          ${rows.join("")}
 
         </table>
 
-
         <h2>
-
           المجموع النهائي:
           ${total}
-
         </h2>
 
-
         <p>
-
           ✅ تم إصدار الفاتورة
-
         </p>
-
 
         <button
           class="print-button"
           onclick="window.print()"
         >
-
           🖨️ طباعة الفاتورة
-
         </button>
 
       </div>
 
     `;
 
-
   }
 
   catch (error) {
 
-
     console.error(error);
-
 
     document.getElementById("invoice").innerHTML = `
 
@@ -925,20 +804,8 @@ async function createInvoice() {
           🧾 الفاتورة
         </h2>
 
-
         <p>
-
-          ⚠️ تم إنشاء الفاتورة،
-          لكن تعذر حفظها في Google Sheets.
-
-        </p>
-
-
-        <p>
-
-          الخطأ:
-          ${error}
-
+          ⚠️ تعذر حفظ الفاتورة.
         </p>
 
       </div>
@@ -950,7 +817,6 @@ async function createInvoice() {
 }
 
 </script>
-
 
 </body>
 
