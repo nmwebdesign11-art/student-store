@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>متجر الطلاب</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+    }
+
+    button {
+      background: #222;
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      margin: 10px;
+    }
+
+    #reader {
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🛒 متجر الطلاب</h1>
+
+  <p>نظام البيع</p>
+
+  <button onclick="startScanner()">
+    📷 مسح الباركود
+  </button>
+
+  <div id="reader"></div>
+
+  <div id="result">
+    اضغط على زر مسح الباركود
+  </div>
+
+</div>
+
+<script>
+
+let scanner = null;
+
+function startScanner() {
+
+  document.getElementById("result").innerHTML =
+    "جاري تشغيل الكاميرا...";
+
+  scanner = new Html5Qrcode("reader");
+
+  scanner.start(
+    {
+      facingMode: "environment"
+    },
+    {
+      fps: 10,
+      qrbox: {
+        width: 250,
+        height: 150
+      }
+    },
+
+    function(decodedText) {
+
+      document.getElementById("result").innerHTML =
+        "✅ تم قراءة الباركود<br><br>" +
+        "<strong>" + decodedText + "</strong>";
+
+      scanner.stop();
+
+    },
+
+    function(errorMessage) {
+      // تجاهل أخطاء القراءة المؤقتة
+    }
+
+  ).catch(function(error) {
+
+    document.getElementById("result").innerHTML =
+      "❌ لم نستطع تشغيل الكاميرا<br><br>" +
+      error;
+
+  });
+
+}
+
+</script>
+
+</body>
+</html>
