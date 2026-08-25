@@ -200,38 +200,39 @@ let products = {};
 
 async function loadProducts() {
 
-  try {
+  const script = document.createElement("script");
 
-    const response =
-      await fetch(PRODUCTS_URL);
+  script.src =
+    PRODUCTS_URL + "?callback=receiveProducts";
 
-    const data =
-      await response.json();
+  document.body.appendChild(script);
 
-
-    products = {};
+}
 
 
-    data.forEach(function(product) {
+function receiveProducts(data) {
 
-      products[product.barcode] = {
+  products = {};
 
-        name: product.name,
+  data.forEach(function(product) {
 
-        price: product.price,
+    products[product.barcode] = {
 
-        stock: product.stock
+      name: product.name,
 
-      };
+      price: product.price,
 
-    });
+      stock: product.stock
+
+    };
+
+  });
 
 
-    document.getElementById("loading").innerHTML =
-      "✅ تم تحميل المنتجات: " + data.length;
+  document.getElementById("loading").innerHTML =
+    "✅ تم تحميل المنتجات: " + data.length;
 
-
-  }
+}
 
   catch (error) {
 
