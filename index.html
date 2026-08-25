@@ -251,7 +251,97 @@ function showCart() {
 
   }
 
+function createInvoice() {
 
+  if (cart.length === 0) {
+
+    alert("السلة فارغة");
+
+    return;
+  }
+
+  const invoiceNumber =
+    Date.now();
+
+  const date =
+    new Date().toLocaleString("ar");
+
+  let total = 0;
+
+  let rows = "";
+
+  cart.forEach(function(item) {
+
+    const itemTotal =
+      item.price * item.quantity;
+
+    total += itemTotal;
+
+    rows += `
+      <tr>
+        <td>${item.name}</td>
+        <td>${item.quantity}</td>
+        <td>${item.price}</td>
+        <td>${itemTotal}</td>
+      </tr>
+    `;
+
+  });
+
+
+  document.getElementById("invoice").innerHTML = `
+
+    <div style="
+      margin-top:25px;
+      padding:20px;
+      border:2px solid #222;
+      border-radius:15px;
+      background:white;
+    ">
+
+      <h2>🧾 فاتورة شراء</h2>
+
+      <p>
+        رقم الفاتورة:
+        <strong>${invoiceNumber}</strong>
+      </p>
+
+      <p>
+        التاريخ:
+        ${date}
+      </p>
+
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+        margin-top:15px;
+      ">
+
+        <tr>
+          <th>المنتج</th>
+          <th>الكمية</th>
+          <th>السعر</th>
+          <th>المجموع</th>
+        </tr>
+
+        ${rows}
+
+      </table>
+
+      <h2>
+        المجموع النهائي:
+        ${total}
+      </h2>
+
+      <button onclick="window.print()">
+        🖨️ طباعة الفاتورة
+      </button>
+
+    </div>
+
+  `;
+
+}
   let html = "";
 
   let total = 0;
