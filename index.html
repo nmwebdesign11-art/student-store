@@ -531,16 +531,170 @@ function showCart() {
    إصدار الفاتورة
 ========================= */
 
-function createInvoice() {
-
+async function createInvoice() {
 
   if (cart.length === 0) {
-
     alert("السلة فارغة");
-
     return;
+  }
+
+  const invoiceNumber = Date.now();
+
+  const now = new Date();
+
+  const date = now.toLocaleDateString("ar");
+
+  const time = now.toLocaleTimeString("ar");
+
+  let total = 0;
+
+  let rows = "";
+
+  let productNames = [];
+
+  let quantities = [];
+
+
+  cart.forEach(function(item) {
+
+    const itemTotal =
+      item.price * item.quantity;
+
+    total += itemTotal;
+
+    productNames.push(item.name);
+
+    quantities.push(item.quantity);
+
+
+    rows += `
+      <tr>
+        <td>${item.name}</td>
+        <td>${item.quantity}</td>
+        <td>${item.price}</td>
+        <td>${itemTotal}</td>
+      </tr>
+    `;
+
+  });
+
+
+  /* إرسال الفاتورة إلى Google Sheets */
+
+  const invoiceData = {
+
+    invoiceNumber: invoiceNumber,
+
+    date: date,
+
+    products: productNames.join("، "),
+
+    quantities: quantities.join("، "),
+
+    total: total,
+
+    time: time
+
+  };
+
+
+  try {
+
+    await fetch(PRODUCTS_URL, {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+
+      body: JSON.stringify(invoiceData)
+
+    });
+
+
+    document.getElementById("invoice").innerHTML = `
+
+      <div class="invoice-box">
+
+        <h2>🧾 فاتورة شراء</h2>
+
+        <p>
+          رقم الفاتورة:
+          <strong>${invoiceNumber}</strong>
+        </p>
+
+        <p>
+          التاريخ:
+          ${date}
+        </p>
+
+        <p>
+          الوقت:
+          ${time}
+        </p>
+
+
+        <table>
+
+          <tr>
+            <th>المنتج</th>
+            <th>الكمية</th>
+            <th>السعر</th>
+            <th>المجموع</th>
+          </tr>
+
+          ${rows}
+
+        </table>
+
+
+        <h2>
+          المجموع النهائي: ${total}
+        </h2>
+
+
+        <p>
+          ✅ تم حفظ الفاتورة
+        </p>
+
+
+        <button
+          class="print-button"
+          onclick="window.print()"
+        >
+          🖨️ طباعة الفاتورة
+        </button>
+
+      </div>
+
+    `;
+
+
+  } catch (error) {
+
+    document.getElementById("invoice").innerHTML = `
+
+      <div class="invoice-box">
+
+        <h2>🧾 الفاتورة</h2>
+
+        <p>
+          ⚠️ تم إنشاء الفاتورة ولكن تعذر حفظها في الجدول.
+        </p>
+
+        <p>
+          الخطأ:
+          ${error}
+        </p>
+
+      </div>
+
+    `;
 
   }
+
+}
 
 
   const invoiceNumber =
