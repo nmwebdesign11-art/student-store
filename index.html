@@ -120,6 +120,11 @@
 
   <h1>🛒 متجر الطلاب</h1>
 
+  <p id="loading">
+    جاري تحميل المنتجات...
+  </p>
+
+
   <button onclick="startScanner()">
     📷 مسح الباركود
   </button>
@@ -171,20 +176,80 @@
 <script>
 
 
+/* =========================
+   رابط Google Apps Script
+========================= */
+
+const PRODUCTS_URL =
+  "https://script.google.com/macros/s/AKfycbxdnSfXqUNxR3QVwUxdCxxWfY9V9ZNssXV8UsQnplTJP7JFJDzBKMTAvhkDI1WHDckv/exec";
+
+
 let scanner = null;
 
 
 let cart = [];
 
 
-const products = {
+let products = {};
 
-  "001": {
-    name: "قلم",
-    price: 5
+
+
+/* =========================
+   تحميل المنتجات
+========================= */
+
+async function loadProducts() {
+
+  try {
+
+    const response =
+      await fetch(PRODUCTS_URL);
+
+    const data =
+      await response.json();
+
+
+    products = {};
+
+
+    data.forEach(function(product) {
+
+      products[product.barcode] = {
+
+        name: product.name,
+
+        price: product.price,
+
+        stock: product.stock
+
+      };
+
+    });
+
+
+    document.getElementById("loading").innerHTML =
+      "✅ تم تحميل المنتجات: " + data.length;
+
+
   }
 
-};
+  catch (error) {
+
+    document.getElementById("loading").innerHTML =
+      "❌ تعذر تحميل المنتجات";
+
+
+    console.error(error);
+
+  }
+
+}
+
+
+
+/* تحميل المنتجات عند فتح التطبيق */
+
+loadProducts();
 
 
 
@@ -193,6 +258,15 @@ const products = {
 ========================= */
 
 function startScanner() {
+
+  if (Object.keys(products).length === 0) {
+
+    alert("لم يتم تحميل المنتجات بعد");
+
+    return;
+
+  }
+
 
   document.getElementById("result").innerHTML =
     "جاري تشغيل الكاميرا...";
@@ -355,7 +429,6 @@ function changeQuantity(index, amount) {
 function showCart() {
 
   const container =
-
     document.getElementById("cartItems");
 
 
@@ -384,7 +457,6 @@ function showCart() {
 
 
     const itemTotal =
-
       item.price * item.quantity;
 
 
@@ -472,12 +544,10 @@ function createInvoice() {
 
 
   const invoiceNumber =
-
     Date.now();
 
 
   const date =
-
     new Date().toLocaleString("ar");
 
 
@@ -491,7 +561,6 @@ function createInvoice() {
 
 
     const itemTotal =
-
       item.price * item.quantity;
 
 
@@ -558,21 +627,13 @@ function createInvoice() {
 
         <tr>
 
-          <th>
-            المنتج
-          </th>
+          <th>المنتج</th>
 
-          <th>
-            الكمية
-          </th>
+          <th>الكمية</th>
 
-          <th>
-            السعر
-          </th>
+          <th>السعر</th>
 
-          <th>
-            المجموع
-          </th>
+          <th>المجموع</th>
 
         </tr>
 
