@@ -90,15 +90,35 @@ function startScanner() {
       }
     },
 
-    function(decodedText) {
+function(decodedText) {
 
-      document.getElementById("result").innerHTML =
-        "✅ تم قراءة الباركود<br><br>" +
-        "<strong>" + decodedText + "</strong>";
+  const products = {
+    "001": {
+      name: "قلم",
+      price: 5
+    }
+  };
 
-      scanner.stop();
+  const product = products[decodedText];
 
-    },
+  if (product) {
+
+    document.getElementById("result").innerHTML =
+      "✅ تم العثور على المنتج<br><br>" +
+      "<strong>" + product.name + "</strong><br>" +
+      "السعر: " + product.price;
+
+  } else {
+
+    document.getElementById("result").innerHTML =
+      "❌ هذا الباركود غير مسجل<br><br>" +
+      "الباركود: " + decodedText;
+
+  }
+
+  scanner.stop();
+
+},
 
     function(errorMessage) {
       // تجاهل أخطاء القراءة المؤقتة
