@@ -23,6 +23,7 @@
       background: #f5f5f5;
       text-align: center;
       padding: 20px;
+      margin: 0;
     }
 
 
@@ -85,7 +86,7 @@
 
     .item {
       border-bottom: 1px solid #ddd;
-      padding: 12px 5px;
+      padding: 15px 5px;
     }
 
 
@@ -131,26 +132,97 @@
     }
 
 
+    /* =================================
+       الطباعة
+    ================================= */
+
     @media print {
 
       body {
-        background: white;
-        padding: 0;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
 
 
+      /*
+       * لا نخفي container لأن الفاتورة
+       * موجودة بداخله.
+       */
+
       .container {
-        display: none;
+        display: block !important;
+        max-width: none !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        border-radius: 0 !important;
+      }
+
+
+      /*
+       * إخفاء عناصر المتجر أثناء الطباعة
+       */
+
+      .container > h1,
+      #loading,
+      .container > button,
+      #reader,
+      #result,
+      .cart > h2,
+      #cartItems,
+      .total,
+      .invoice-button {
+        display: none !important;
+      }
+
+
+      /*
+       * إبقاء الفاتورة فقط
+       */
+
+      .cart {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
 
       #invoice {
-        display: block;
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+
+      .invoice-box {
+        display: block !important;
+        width: auto !important;
+        margin: 0 !important;
+        padding: 20px !important;
+        background: white !important;
+        border: 2px solid #222 !important;
+        border-radius: 0 !important;
       }
 
 
       .print-button {
-        display: none;
+        display: none !important;
+      }
+
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+
+
+      th,
+      td {
+        border: 1px solid #000 !important;
+        padding: 8px !important;
+        text-align: center !important;
       }
 
     }
@@ -165,12 +237,16 @@
 
 <div class="container">
 
+
   <h1>🛒 متجر الطلاب</h1>
 
 
-  <p id="loading" class="status">
+  <div
+    id="loading"
+    class="status"
+  >
     جاري تحميل المنتجات...
-  </p>
+  </div>
 
 
   <button onclick="startScanner()">
@@ -187,6 +263,7 @@
 
 
   <div class="cart">
+
 
     <h2>🛒 السلة</h2>
 
@@ -217,7 +294,9 @@
 
     <div id="invoice"></div>
 
+
   </div>
+
 
 </div>
 
@@ -225,17 +304,17 @@
 <script>
 
 
-/* =========================================
+/* =====================================
    رابط Google Apps Script
-========================================= */
+===================================== */
 
 const PRODUCTS_URL =
   "https://script.google.com/macros/s/AKfycbxdnSfXqUNxR3QVwUxdCxxWfY9V9ZNssXV8UsQnplTJP7JFJDzBKMTAvhkDI1WHDckv/exec";
 
 
-/* =========================================
+/* =====================================
    المتغيرات
-========================================= */
+===================================== */
 
 let scanner = null;
 
@@ -244,9 +323,9 @@ let cart = [];
 let products = {};
 
 
-/* =========================================
+/* =====================================
    تحميل المنتجات
-========================================= */
+===================================== */
 
 async function loadProducts() {
 
@@ -259,7 +338,7 @@ async function loadProducts() {
     if (!response.ok) {
 
       throw new Error(
-        "تعذر الاتصال بـ Google Apps Script"
+        "تعذر الاتصال بالخادم"
       );
 
     }
@@ -269,14 +348,9 @@ async function loadProducts() {
       await response.json();
 
 
-    /*
-     * Apps Script يعيد مصفوفة المنتجات
-     */
-
     if (!Array.isArray(data)) {
 
       throw new Error(
-        data.error ||
         "بيانات المنتجات غير صحيحة"
       );
 
@@ -286,56 +360,50 @@ async function loadProducts() {
     products = {};
 
 
-    data.forEach(function(product) {
+    data.forEach(
+      function(product) {
 
 
-      /*
-       * جدول الشيت:
-       *
-       * 1 = قلم
-       * 2 = ممحاة
-       * 3 = دفتر
-       *
-       * نحولها إلى:
-       *
-       * 001
-       * 002
-       * 003
-       */
-
-      const productNumber =
-        parseInt(
-          product.barcode,
-          10
-        );
+        const productNumber =
+          parseInt(
+            product.barcode,
+            10
+          );
 
 
-      if (isNaN(productNumber)) {
+        if (isNaN(productNumber)) {
 
-        return;
+          return;
+
+        }
+
+
+        /*
+         * 1  -> 001
+         * 2  -> 002
+         * 3  -> 003
+         */
+
+        const barcode =
+          String(productNumber)
+            .padStart(3, "0");
+
+
+        products[barcode] = {
+
+          name:
+            product.name,
+
+          price:
+            Number(product.price),
+
+          stock:
+            Number(product.stock)
+
+        };
 
       }
-
-
-      const barcode =
-        String(productNumber)
-          .padStart(3, "0");
-
-
-      products[barcode] = {
-
-        name:
-          product.name,
-
-        price:
-          Number(product.price),
-
-        stock:
-          Number(product.stock)
-
-      };
-
-    });
+    );
 
 
     document.getElementById(
@@ -350,19 +418,14 @@ async function loadProducts() {
 
   catch (error) {
 
-    console.error(
-      "خطأ تحميل المنتجات:",
-      error
-    );
+    console.error(error);
 
 
     document.getElementById(
       "loading"
     ).innerHTML =
 
-      "❌ تعذر تحميل المنتجات<br><br>" +
-
-      error.message;
+      "❌ تعذر تحميل المنتجات";
 
   }
 
@@ -370,15 +433,15 @@ async function loadProducts() {
 
 
 /*
- * تحميل المنتجات عند فتح المتجر
+ * تحميل المنتجات
  */
 
 loadProducts();
 
 
-/* =========================================
+/* =====================================
    تشغيل الكاميرا
-========================================= */
+===================================== */
 
 async function startScanner() {
 
@@ -403,10 +466,6 @@ async function startScanner() {
     "📷 جاري تشغيل الكاميرا...";
 
 
-  /*
-   * إيقاف أي ماسح سابق
-   */
-
   if (scanner) {
 
     try {
@@ -415,11 +474,7 @@ async function startScanner() {
 
     }
 
-    catch (e) {
-
-      console.log(e);
-
-    }
+    catch (e) {}
 
   }
 
@@ -441,23 +496,14 @@ async function startScanner() {
         width: 250,
         height: 150
       }
-
     },
 
 
     async function(decodedText) {
 
 
-      /*
-       * إضافة المنتج
-       */
-
       addProduct(decodedText);
 
-
-      /*
-       * إيقاف الكاميرا
-       */
 
       try {
 
@@ -465,11 +511,7 @@ async function startScanner() {
 
       }
 
-      catch (e) {
-
-        console.log(e);
-
-      }
+      catch (e) {}
 
 
       document.getElementById(
@@ -499,40 +541,28 @@ async function startScanner() {
       "result"
     ).innerHTML =
 
-      "❌ لم نستطع تشغيل الكاميرا<br><br>" +
-
-      error;
+      "❌ لم نستطع تشغيل الكاميرا";
 
   });
 
 }
 
 
-/* =========================================
+/* =====================================
    إضافة المنتج
-========================================= */
+===================================== */
 
 function addProduct(barcode) {
 
 
-  /*
-   * قراءة الباركود كما هو.
-   *
-   * إذا كانت الكاميرا تقرأ:
-   * 1
-   *
-   * نحولها إلى:
-   * 001
-   */
-
-  const productNumber =
+  const number =
     parseInt(
       String(barcode).trim(),
       10
     );
 
 
-  if (isNaN(productNumber)) {
+  if (isNaN(number)) {
 
     document.getElementById(
       "result"
@@ -545,8 +575,12 @@ function addProduct(barcode) {
   }
 
 
+  /*
+   * تحويل الرقم إلى 3 خانات
+   */
+
   const normalizedBarcode =
-    String(productNumber)
+    String(number)
       .padStart(3, "0");
 
 
@@ -562,28 +596,28 @@ function addProduct(barcode) {
 
       "❌ هذا الباركود غير مسجل<br><br>" +
 
-      "الباركود: " +
+      "الباركود: <strong>" +
 
-      normalizedBarcode;
+      normalizedBarcode +
+
+      "</strong>";
 
     return;
 
   }
 
 
-  /*
-   * البحث عن المنتج في السلة
-   */
-
   const existing =
-    cart.find(function(item) {
+    cart.find(
+      function(item) {
 
-      return (
-        item.barcode ===
-        normalizedBarcode
-      );
+        return (
+          item.barcode ===
+          normalizedBarcode
+        );
 
-    });
+      }
+    );
 
 
   if (existing) {
@@ -618,9 +652,11 @@ function addProduct(barcode) {
     "result"
   ).innerHTML =
 
-    "✅ تمت إضافة " +
+    "✅ تمت إضافة <strong>" +
 
-    product.name;
+    product.name +
+
+    "</strong>";
 
 
   showCart();
@@ -628,9 +664,9 @@ function addProduct(barcode) {
 }
 
 
-/* =========================================
-   حذف منتج
-========================================= */
+/* =====================================
+   حذف المنتج
+===================================== */
 
 function deleteProduct(index) {
 
@@ -645,9 +681,9 @@ function deleteProduct(index) {
 }
 
 
-/* =========================================
+/* =====================================
    تغيير الكمية
-========================================= */
+===================================== */
 
 function changeQuantity(
   index,
@@ -683,9 +719,9 @@ function changeQuantity(
 }
 
 
-/* =========================================
+/* =====================================
    عرض السلة
-========================================= */
+===================================== */
 
 function showCart() {
 
@@ -775,6 +811,7 @@ function showCart() {
           <br><br>
 
           مجموع المنتج:
+
           <strong>
             ${itemTotal}
           </strong>
@@ -812,9 +849,9 @@ function showCart() {
 }
 
 
-/* =========================================
-   إصدار الفاتورة وحفظها
-========================================= */
+/* =====================================
+   إصدار الفاتورة
+===================================== */
 
 function createInvoice() {
 
@@ -830,17 +867,9 @@ function createInvoice() {
   }
 
 
-  /*
-   * رقم الفاتورة
-   */
-
   const invoiceNumber =
     Date.now();
 
-
-  /*
-   * التاريخ والوقت
-   */
 
   const now =
     new Date();
@@ -856,17 +885,13 @@ function createInvoice() {
 
   let total = 0;
 
-  let rows = "";
+  let rows = [];
 
 
   const productNames = [];
 
   const quantities = [];
 
-
-  /*
-   * تجهيز المنتجات
-   */
 
   cart.forEach(
     function(item) {
@@ -891,7 +916,7 @@ function createInvoice() {
       );
 
 
-      rows += `
+      rows.push(`
 
         <tr>
 
@@ -913,14 +938,15 @@ function createInvoice() {
 
         </tr>
 
-      `;
+      `);
 
     }
   );
 
 
   /*
-   * عرض الفاتورة أولًا
+   * عرض الفاتورة مباشرة
+   * بدون انتظار Google Sheets
    */
 
   document.getElementById(
@@ -984,7 +1010,7 @@ function createInvoice() {
         </tr>
 
 
-        ${rows}
+        ${rows.join("")}
 
       </table>
 
@@ -997,11 +1023,9 @@ function createInvoice() {
       </h2>
 
 
-      <p
-        id="saveStatus"
-        class="status"
-      >
-        ⏳ جاري حفظ الفاتورة في الشيت...
+      <p class="status">
+
+        🧾 تم إصدار الفاتورة
 
       </p>
 
@@ -1022,137 +1046,82 @@ function createInvoice() {
 
 
   /*
-   * تجهيز رابط الحفظ
-   */
-
-  const params =
-    new URLSearchParams();
-
-
-  params.append(
-    "action",
-    "saveInvoice"
-  );
-
-
-  params.append(
-    "invoiceNumber",
-    invoiceNumber
-  );
-
-
-  params.append(
-    "date",
-    date
-  );
-
-
-  params.append(
-    "products",
-    productNames.join("، ")
-  );
-
-
-  params.append(
-    "quantities",
-    quantities.join("، ")
-  );
-
-
-  params.append(
-    "total",
-    total
-  );
-
-
-  params.append(
-    "time",
-    time
-  );
-
-
-  const saveUrl =
-    PRODUCTS_URL +
-    "?" +
-    params.toString();
-
-
-  /*
    * =====================================
-   * إرسال طلب الحفظ
+   * محاولة حفظ الفاتورة في الشيت
    *
-   * نستخدم iframe مخفي بدل fetch POST.
-   * هذا لا يعتمد على CORS.
+   * هذه العملية لا تمنع ظهور الفاتورة
+   * أو طباعتها إذا فشل الحفظ.
    * =====================================
    */
 
-  const iframe =
-    document.createElement(
-      "iframe"
+  const invoiceData = {
+
+    invoiceNumber:
+      invoiceNumber,
+
+    date:
+      date,
+
+    products:
+      productNames.join("، "),
+
+    quantities:
+      quantities.join("، "),
+
+    total:
+      total,
+
+    time:
+      time
+
+  };
+
+
+  fetch(
+    PRODUCTS_URL,
+    {
+
+      method: "POST",
+
+      body:
+        JSON.stringify(
+          invoiceData
+        )
+
+    }
+
+  )
+
+  .then(function(response) {
+
+    return response
+      .json();
+
+  })
+
+  .then(function(result) {
+
+    console.log(
+      "نتيجة حفظ الفاتورة:",
+      result
     );
 
+  })
 
-  iframe.style.display =
-    "none";
+  .catch(function(error) {
 
+    /*
+     * نتجاهل خطأ الحفظ حاليًا
+     * لأننا اتفقنا على عدم التركيز
+     * عليه الآن.
+     */
 
-  iframe.style.width =
-    "1px";
+    console.log(
+      "الحفظ لم ينجح حاليًا:",
+      error
+    );
 
-
-  iframe.style.height =
-    "1px";
-
-
-  iframe.src =
-    saveUrl;
-
-
-  document.body.appendChild(
-    iframe
-  );
-
-
-  /*
-   * بعد إعطاء Apps Script وقتًا للحفظ
-   */
-
-  setTimeout(
-    function() {
-
-
-      const status =
-        document.getElementById(
-          "saveStatus"
-        );
-
-
-      if (status) {
-
-        status.innerHTML =
-
-          "✅ تم إرسال الفاتورة للحفظ في الشيت";
-
-      }
-
-
-      /*
-       * حذف iframe
-       */
-
-      setTimeout(
-        function() {
-
-          iframe.remove();
-
-        },
-        3000
-      );
-
-
-    },
-    2500
-  );
+  });
 
 }
 
