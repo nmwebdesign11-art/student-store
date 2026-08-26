@@ -358,7 +358,6 @@ async function loadProducts() {
     data.forEach(
       function(product) {
 
-
         const productNumber =
           parseInt(
             product.barcode,
@@ -566,6 +565,10 @@ function addProduct(barcode) {
 
   }
 
+
+  /*
+   * تحويل الرقم إلى 3 خانات
+   */
 
   const normalizedBarcode =
     String(number)
@@ -1043,8 +1046,7 @@ function createInvoice() {
 
 
   /*
-   * محاولة حفظ الفاتورة في الشيت
-   * بدون التأثير على الفاتورة أو الطباعة
+   * بيانات الفاتورة
    */
 
   const invoiceData = {
@@ -1070,44 +1072,102 @@ function createInvoice() {
   };
 
 
-  fetch(
-    PRODUCTS_URL,
-    {
+  /*
+   * =====================================
+   * حفظ الفاتورة في Google Sheets
+   *
+   * نستخدم GET بدل POST لتجنب مشكلة
+   * الاتصال بين GitHub Pages و Apps Script
+   * =====================================
+   */
 
-      method: "POST",
+  try {
 
-      body:
-        JSON.stringify(
-          invoiceData
-        )
+    const params =
+      new URLSearchParams();
 
-    }
 
-  )
-
-  .then(function(response) {
-
-    return response.json();
-
-  })
-
-  .then(function(result) {
-
-    console.log(
-      "نتيجة حفظ الفاتورة:",
-      result
+    params.append(
+      "action",
+      "saveInvoice"
     );
 
-  })
 
-  .catch(function(error) {
+    params.append(
+      "invoiceNumber",
+      invoiceData.invoiceNumber
+    );
+
+
+    params.append(
+      "date",
+      invoiceData.date
+    );
+
+
+    params.append(
+      "products",
+      invoiceData.products
+    );
+
+
+    params.append(
+      "quantities",
+      invoiceData.quantities
+    );
+
+
+    params.append(
+      "total",
+      invoiceData.total
+    );
+
+
+    params.append(
+      "time",
+      invoiceData.time
+    );
+
+
+    /*
+     * إرسال الطلب بدون fetch
+     * حتى لا نواجه مشكلة CORS
+     */
+
+    const saveRequest =
+      document.createElement("img");
+
+
+    saveRequest.style.display =
+      "none";
+
+
+    saveRequest.src =
+      PRODUCTS_URL +
+      "?" +
+      params.toString();
+
+
+    document.body.appendChild(
+      saveRequest
+    );
+
 
     console.log(
-      "الحفظ لم ينجح حاليًا:",
+      "تم إرسال الفاتورة للحفظ في Google Sheets"
+    );
+
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "خطأ أثناء إرسال الفاتورة:",
       error
     );
 
-  });
+  }
 
 }
 
@@ -1154,8 +1214,7 @@ function newInvoice() {
 
 
   /*
-   * إعادة تشغيل الكاميرا
-   * عند الضغط على زر المسح
+   * تنظيف مكان الكاميرا
    */
 
   document.getElementById(
