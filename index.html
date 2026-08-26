@@ -13,219 +13,134 @@
 
   <title>متجر الطلاب</title>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 
   <style>
 
     body {
-
       font-family: Arial, sans-serif;
-
       background: #f5f5f5;
-
       text-align: center;
-
       padding: 20px;
-
       margin: 0;
-
     }
-
 
     .container {
-
       max-width: 600px;
-
       margin: auto;
-
       background: white;
-
       padding: 20px;
-
       border-radius: 15px;
-
     }
-
 
     button {
-
       background: #222;
-
       color: white;
-
       border: none;
-
       padding: 12px 20px;
-
       border-radius: 10px;
-
       font-size: 17px;
-
       cursor: pointer;
-
       margin: 5px;
-
     }
-
 
     .delete {
-
       background: #c62828;
-
     }
-
 
     .invoice-button {
-
       background: #1769aa;
-
       width: 100%;
-
       margin-top: 20px;
-
     }
-
 
     .print-button {
-
       width: 100%;
-
       margin-top: 20px;
-
     }
-
 
     #reader {
-
       width: 100%;
-
       margin-top: 20px;
-
     }
-
 
     #result {
-
       margin-top: 20px;
-
       font-size: 19px;
-
     }
-
 
     .cart {
-
       margin-top: 25px;
-
       text-align: right;
-
     }
-
 
     .item {
-
       border-bottom: 1px solid #ddd;
-
       padding: 15px 5px;
-
     }
-
 
     .total {
-
       font-size: 24px;
-
       font-weight: bold;
-
       margin-top: 20px;
-
     }
-
 
     #invoice {
-
       margin-top: 25px;
-
       text-align: right;
-
     }
-
 
     .invoice-box {
-
       border: 2px solid #222;
-
       border-radius: 15px;
-
       padding: 20px;
-
       background: white;
-
     }
-
 
     table {
-
       width: 100%;
-
       border-collapse: collapse;
-
       margin-top: 15px;
-
     }
-
 
     th,
     td {
-
       border: 1px solid #ccc;
-
       padding: 8px;
-
       text-align: center;
-
     }
-
 
     .status {
-
       font-weight: bold;
-
       margin: 10px 0;
-
     }
 
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: #c62828;
+    }
 
     @media print {
 
       body {
-
         background: white;
-
         padding: 0;
-
       }
-
 
       .container {
-
         display: none;
-
       }
-
 
       #invoice {
-
         display: block;
-
       }
 
-
       .print-button {
-
         display: none;
-
       }
 
     }
@@ -240,7 +155,6 @@
 
 <div class="container">
 
-
   <h1>🛒 متجر الطلاب</h1>
 
 
@@ -248,16 +162,12 @@
     id="loading"
     class="status"
   >
-
     جاري تحميل المنتجات...
-
   </div>
 
 
   <button onclick="startScanner()">
-
     📷 مسح الباركود
-
   </button>
 
 
@@ -265,22 +175,17 @@
 
 
   <div id="result">
-
     اضغط على زر مسح الباركود
-
   </div>
 
 
   <div class="cart">
 
-
     <h2>🛒 السلة</h2>
 
 
     <div id="cartItems">
-
       لا توجد منتجات
-
     </div>
 
 
@@ -299,29 +204,15 @@
       class="invoice-button"
       onclick="createInvoice()"
     >
-
       🧾 إصدار الفاتورة
-
     </button>
 
 
     <div id="invoice"></div>
 
-
   </div>
 
-
 </div>
-
-
-<!--
-  إطار مخفي لاستقبال رد Google Apps Script
--->
-
-<iframe
-  name="invoiceSaveFrame"
-  style="display:none;"
-></iframe>
 
 
 <script>
@@ -332,7 +223,15 @@
 ===================================== */
 
 const PRODUCTS_URL =
-  "https://script.google.com/macros/s/AKfycbxdnSfXqUNxR3QVwUxdCxxWfY9V9ZNssXV8UsQnplTJP7JFJDzBKMTAvhkDI1WHDckv/exec";
+  "https://script.google.com/macros/s/AKfycbxdnSfXqUNxR3QVwXuduCxxWfY9V9ZNssXV8UsQnplTJP7JFJDzBKMTAvhkDI1WHDckv/exec";
+
+
+/*
+ * مهم:
+ * إذا كان الرابط أعلاه مختلفًا عن رابط
+ * Web App الموجود عندك، استخدم رابط
+ * Web App الحالي الموجود في Deployment.
+ */
 
 
 /* =====================================
@@ -358,70 +257,60 @@ async function loadProducts() {
       await fetch(PRODUCTS_URL);
 
 
-    if (!response.ok) {
+    const result =
+      await response.json();
+
+
+    if (!result.success) {
 
       throw new Error(
-        "HTTP " + response.status
+        result.error ||
+        "تعذر تحميل المنتجات"
       );
 
     }
 
 
-    const data =
-      await response.json();
-
-
     products = {};
 
 
-    data.forEach(function(product) {
+    result.products.forEach(
+      function(product) {
+
+        const number =
+          parseInt(
+            product.barcode,
+            10
+          );
 
 
-      const productNumber =
-        parseInt(
-          product.barcode,
-          10
-        );
+        if (isNaN(number)) {
+
+          return;
+
+        }
 
 
-      if (isNaN(productNumber)) {
+        const barcode =
+          String(number)
+            .padStart(3, "0");
 
-        return;
+
+        products[barcode] = {
+
+          name:
+            product.name,
+
+          price:
+            Number(product.price),
+
+          stock:
+            Number(product.stock)
+
+        };
 
       }
-
-
-      /*
-       * تحويل:
-       *
-       * 1  -> 001
-       * 2  -> 002
-       * 3  -> 003
-       */
-
-      const barcode =
-        String(productNumber)
-          .padStart(3, "0");
-
-
-      products[barcode] = {
-
-        name:
-          product.name,
-
-        price:
-          Number(product.price),
-
-        stock:
-          Number(product.stock),
-
-        productNumber:
-          productNumber
-
-      };
-
-
-    });
+    );
 
 
     document.getElementById(
@@ -429,7 +318,7 @@ async function loadProducts() {
     ).innerHTML =
 
       "✅ تم تحميل المنتجات: " +
-      data.length;
+      result.products.length;
 
   }
 
@@ -507,15 +396,10 @@ async function startScanner() {
       fps: 10,
 
       qrbox: {
-
         width: 250,
-
         height: 150
-
       }
-
     },
-
 
     async function(decodedText) {
 
@@ -529,7 +413,11 @@ async function startScanner() {
 
       }
 
-      catch (e) {}
+      catch (e) {
+
+        console.log(e);
+
+      }
 
 
       document.getElementById(
@@ -538,20 +426,15 @@ async function startScanner() {
 
     },
 
-
     function(errorMessage) {
 
       // تجاهل أخطاء القراءة المؤقتة
 
     }
 
-  )
-
-
-  .catch(function(error) {
+  ).catch(function(error) {
 
     console.error(error);
-
 
     document.getElementById(
       "result"
@@ -592,11 +475,9 @@ function addProduct(barcode) {
 
 
   /*
-   * تحويل الباركود إلى 3 أرقام
-   *
-   * 1   -> 001
-   * 2   -> 002
-   * 3   -> 003
+   * 1  → 001
+   * 2  → 002
+   * 3  → 003
    */
 
   const normalizedBarcode =
@@ -628,14 +509,16 @@ function addProduct(barcode) {
 
 
   const existing =
-    cart.find(function(item) {
+    cart.find(
+      function(item) {
 
-      return (
-        item.barcode ===
-        normalizedBarcode
-      );
+        return (
+          item.barcode ===
+          normalizedBarcode
+        );
 
-    });
+      }
+    );
 
 
   if (existing) {
@@ -643,7 +526,6 @@ function addProduct(barcode) {
     existing.quantity++;
 
   }
-
 
   else {
 
@@ -670,11 +552,9 @@ function addProduct(barcode) {
     "result"
   ).innerHTML =
 
-    "✅ تمت إضافة <strong>" +
+    "✅ تمت إضافة " +
 
-    product.name +
-
-    "</strong>";
+    product.name;
 
 
   showCart();
@@ -683,7 +563,7 @@ function addProduct(barcode) {
 
 
 /* =====================================
-   حذف المنتج
+   حذف منتج
 ===================================== */
 
 function deleteProduct(index) {
@@ -751,7 +631,8 @@ function showCart() {
 
     document.getElementById(
       "total"
-    ).innerText = "0";
+    ).innerText =
+      "0";
 
 
     return;
@@ -817,7 +698,6 @@ function showCart() {
           <br><br>
 
           مجموع المنتج:
-
           <strong>
             ${itemTotal}
           </strong>
@@ -830,9 +710,7 @@ function showCart() {
               ${index}
             )"
           >
-
             🗑️ حذف
-
           </button>
 
         </div>
@@ -856,7 +734,7 @@ function showCart() {
 
 
 /* =====================================
-   إصدار الفاتورة
+   إصدار وحفظ الفاتورة
 ===================================== */
 
 function createInvoice() {
@@ -950,6 +828,10 @@ function createInvoice() {
   );
 
 
+  /*
+   * بيانات الفاتورة
+   */
+
   const invoiceData = {
 
     invoiceNumber:
@@ -973,9 +855,9 @@ function createInvoice() {
   };
 
 
-  /* =====================================
-     عرض الفاتورة فورًا
-  ===================================== */
+  /*
+   * عرض الفاتورة
+   */
 
   document.getElementById(
     "invoice"
@@ -987,31 +869,21 @@ function createInvoice() {
         🧾 فاتورة شراء
       </h2>
 
-
       <p>
-
         رقم الفاتورة:
-
         <strong>
           ${invoiceNumber}
         </strong>
-
       </p>
 
-
       <p>
-
         التاريخ:
         ${date}
-
       </p>
 
-
       <p>
-
         الوقت:
         ${time}
-
       </p>
 
 
@@ -1037,17 +909,14 @@ function createInvoice() {
 
         </tr>
 
-
         ${rows.join("")}
 
       </table>
 
 
       <h2>
-
         المجموع النهائي:
         ${total}
-
       </h2>
 
 
@@ -1055,9 +924,7 @@ function createInvoice() {
         id="saveStatus"
         class="status"
       >
-
         ⏳ جاري حفظ الفاتورة...
-
       </div>
 
 
@@ -1065,105 +932,116 @@ function createInvoice() {
         class="print-button"
         onclick="window.print()"
       >
-
         🖨️ طباعة الفاتورة
-
       </button>
-
 
     </div>
 
   `;
 
 
-  /* =====================================
-     إرسال الفاتورة إلى Apps Script
-     باستخدام نموذج مخفي
-  ===================================== */
+  /*
+   * بناء رابط الحفظ
+   */
 
-  const form =
+  const params =
+    new URLSearchParams();
+
+
+  params.append(
+    "action",
+    "saveInvoice"
+  );
+
+
+  params.append(
+    "invoiceNumber",
+    invoiceNumber
+  );
+
+
+  params.append(
+    "date",
+    date
+  );
+
+
+  params.append(
+    "products",
+    productNames.join("، ")
+  );
+
+
+  params.append(
+    "quantities",
+    quantities.join("، ")
+  );
+
+
+  params.append(
+    "total",
+    total
+  );
+
+
+  params.append(
+    "time",
+    time
+  );
+
+
+  const saveUrl =
+    PRODUCTS_URL +
+    "?" +
+    params.toString();
+
+
+  /*
+   * إرسال طلب الحفظ.
+   *
+   * لا نستخدم fetch هنا.
+   * نفتح الطلب كصورة مخفية حتى لا
+   * يمنعه المتصفح من الصفحة.
+   */
+
+  const saveRequest =
     document.createElement(
-      "form"
+      "img"
     );
 
 
-  form.method =
-    "POST";
-
-
-  form.action =
-    PRODUCTS_URL;
-
-
-  form.target =
-    "invoiceSaveFrame";
-
-
-  form.style.display =
+  saveRequest.style.display =
     "none";
 
 
-  const input =
-    document.createElement(
-      "input"
-    );
-
-
-  input.type =
-    "hidden";
-
-
-  input.name =
-    "invoiceData";
-
-
-  input.value =
-    JSON.stringify(
-      invoiceData
-    );
-
-
-  form.appendChild(
-    input
-  );
+  saveRequest.src =
+    saveUrl;
 
 
   document.body.appendChild(
-    form
+    saveRequest
   );
 
 
   /*
-   * إرسال البيانات
-   */
-
-  form.submit();
-
-
-  /*
-   * لا نحذف النموذج فورًا.
-   * نتركه فترة حتى يتم إرسال الطلب.
+   * نعطي Apps Script وقتًا لمعالجة
+   * الطلب ثم نعرض رسالة نجاح.
    */
 
   setTimeout(
     function() {
 
-      form.remove();
+      document.getElementById(
+        "saveStatus"
+      ).innerHTML =
+
+        "✅ تم إرسال الفاتورة للحفظ";
+
+      saveRequest.remove();
 
     },
-    5000
+    2500
   );
-
-
-  /*
-   * تحديث الرسالة
-   */
-
-  document.getElementById(
-    "saveStatus"
-  ).innerHTML =
-
-    "✅ تم إرسال الفاتورة للحفظ";
 
 }
 
