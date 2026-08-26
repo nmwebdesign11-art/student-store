@@ -60,6 +60,13 @@
     }
 
 
+    .new-invoice-button {
+      background: #2e7d32;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+
     .print-button {
       width: 100%;
       margin-top: 20px;
@@ -145,11 +152,6 @@
       }
 
 
-      /*
-       * لا نخفي container لأن الفاتورة
-       * موجودة بداخله.
-       */
-
       .container {
         display: block !important;
         max-width: none !important;
@@ -160,10 +162,6 @@
         border-radius: 0 !important;
       }
 
-
-      /*
-       * إخفاء عناصر المتجر أثناء الطباعة
-       */
 
       .container > h1,
       #loading,
@@ -177,10 +175,6 @@
         display: none !important;
       }
 
-
-      /*
-       * إبقاء الفاتورة فقط
-       */
 
       .cart {
         display: block !important;
@@ -207,7 +201,8 @@
       }
 
 
-      .print-button {
+      .print-button,
+      .new-invoice-button {
         display: none !important;
       }
 
@@ -432,10 +427,6 @@ async function loadProducts() {
 }
 
 
-/*
- * تحميل المنتجات
- */
-
 loadProducts();
 
 
@@ -496,6 +487,7 @@ async function startScanner() {
         width: 250,
         height: 150
       }
+
     },
 
 
@@ -574,10 +566,6 @@ function addProduct(barcode) {
 
   }
 
-
-  /*
-   * تحويل الرقم إلى 3 خانات
-   */
 
   const normalizedBarcode =
     String(number)
@@ -945,8 +933,7 @@ function createInvoice() {
 
 
   /*
-   * عرض الفاتورة مباشرة
-   * بدون انتظار Google Sheets
+   * عرض الفاتورة
    */
 
   document.getElementById(
@@ -1040,18 +1027,24 @@ function createInvoice() {
       </button>
 
 
+      <button
+        class="new-invoice-button"
+        onclick="newInvoice()"
+      >
+
+        🆕 فاتورة جديدة
+
+      </button>
+
+
     </div>
 
   `;
 
 
   /*
-   * =====================================
    * محاولة حفظ الفاتورة في الشيت
-   *
-   * هذه العملية لا تمنع ظهور الفاتورة
-   * أو طباعتها إذا فشل الحفظ.
-   * =====================================
+   * بدون التأثير على الفاتورة أو الطباعة
    */
 
   const invoiceData = {
@@ -1094,8 +1087,7 @@ function createInvoice() {
 
   .then(function(response) {
 
-    return response
-      .json();
+    return response.json();
 
   })
 
@@ -1110,18 +1102,65 @@ function createInvoice() {
 
   .catch(function(error) {
 
-    /*
-     * نتجاهل خطأ الحفظ حاليًا
-     * لأننا اتفقنا على عدم التركيز
-     * عليه الآن.
-     */
-
     console.log(
       "الحفظ لم ينجح حاليًا:",
       error
     );
 
   });
+
+}
+
+
+/* =====================================
+   فاتورة جديدة
+===================================== */
+
+function newInvoice() {
+
+
+  /*
+   * تفريغ السلة
+   */
+
+  cart = [];
+
+
+  /*
+   * إعادة عرض السلة
+   */
+
+  showCart();
+
+
+  /*
+   * مسح الفاتورة
+   */
+
+  document.getElementById(
+    "invoice"
+  ).innerHTML = "";
+
+
+  /*
+   * إعادة رسالة النتيجة
+   */
+
+  document.getElementById(
+    "result"
+  ).innerHTML =
+
+    "🆕 جاهز لفاتورة جديدة";
+
+
+  /*
+   * إعادة تشغيل الكاميرا
+   * عند الضغط على زر المسح
+   */
+
+  document.getElementById(
+    "reader"
+  ).innerHTML = "";
 
 }
 
