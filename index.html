@@ -13,7 +13,7 @@
 
   <title>متجر الطلاب</title>
 
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
 
   <style>
@@ -23,8 +23,8 @@
       background: #f5f5f5;
       text-align: center;
       padding: 20px;
-      margin: 0;
     }
+
 
     .container {
       max-width: 600px;
@@ -33,6 +33,7 @@
       padding: 20px;
       border-radius: 15px;
     }
+
 
     button {
       background: #222;
@@ -45,9 +46,11 @@
       margin: 5px;
     }
 
+
     .delete {
       background: #c62828;
     }
+
 
     .invoice-button {
       background: #1769aa;
@@ -55,30 +58,36 @@
       margin-top: 20px;
     }
 
+
     .print-button {
       width: 100%;
       margin-top: 20px;
     }
+
 
     #reader {
       width: 100%;
       margin-top: 20px;
     }
 
+
     #result {
       margin-top: 20px;
       font-size: 19px;
     }
+
 
     .cart {
       margin-top: 25px;
       text-align: right;
     }
 
+
     .item {
       border-bottom: 1px solid #ddd;
-      padding: 15px 5px;
+      padding: 12px 5px;
     }
+
 
     .total {
       font-size: 24px;
@@ -86,10 +95,12 @@
       margin-top: 20px;
     }
 
+
     #invoice {
       margin-top: 25px;
       text-align: right;
     }
+
 
     .invoice-box {
       border: 2px solid #222;
@@ -98,11 +109,13 @@
       background: white;
     }
 
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 15px;
     }
+
 
     th,
     td {
@@ -111,18 +124,12 @@
       text-align: center;
     }
 
+
     .status {
       font-weight: bold;
       margin: 10px 0;
     }
 
-    .success {
-      color: green;
-    }
-
-    .error {
-      color: #c62828;
-    }
 
     @media print {
 
@@ -131,13 +138,16 @@
         padding: 0;
       }
 
+
       .container {
         display: none;
       }
 
+
       #invoice {
         display: block;
       }
+
 
       .print-button {
         display: none;
@@ -158,12 +168,9 @@
   <h1>🛒 متجر الطلاب</h1>
 
 
-  <div
-    id="loading"
-    class="status"
-  >
+  <p id="loading" class="status">
     جاري تحميل المنتجات...
-  </div>
+  </p>
 
 
   <button onclick="startScanner()">
@@ -218,24 +225,17 @@
 <script>
 
 
-/* =====================================
+/* =========================================
    رابط Google Apps Script
-===================================== */
+========================================= */
 
 const PRODUCTS_URL =
   "https://script.google.com/macros/s/AKfycbxdnSfXqUNxR3QVwUxdCxxWfY9V9ZNssXV8UsQnplTJP7JFJDzBKMTAvhkDI1WHDckv/exec";
 
-/*
- * مهم:
- * إذا كان الرابط أعلاه مختلفًا عن رابط
- * Web App الموجود عندك، استخدم رابط
- * Web App الحالي الموجود في Deployment.
- */
 
-
-/* =====================================
+/* =========================================
    المتغيرات
-===================================== */
+========================================= */
 
 let scanner = null;
 
@@ -244,9 +244,9 @@ let cart = [];
 let products = {};
 
 
-/* =====================================
+/* =========================================
    تحميل المنتجات
-===================================== */
+========================================= */
 
 async function loadProducts() {
 
@@ -256,15 +256,28 @@ async function loadProducts() {
       await fetch(PRODUCTS_URL);
 
 
-    const result =
+    if (!response.ok) {
+
+      throw new Error(
+        "تعذر الاتصال بـ Google Apps Script"
+      );
+
+    }
+
+
+    const data =
       await response.json();
 
 
-    if (!result.success) {
+    /*
+     * Apps Script يعيد مصفوفة المنتجات
+     */
+
+    if (!Array.isArray(data)) {
 
       throw new Error(
-        result.error ||
-        "تعذر تحميل المنتجات"
+        data.error ||
+        "بيانات المنتجات غير صحيحة"
       );
 
     }
@@ -273,43 +286,56 @@ async function loadProducts() {
     products = {};
 
 
-    result.products.forEach(
-      function(product) {
-
-        const number =
-          parseInt(
-            product.barcode,
-            10
-          );
+    data.forEach(function(product) {
 
 
-        if (isNaN(number)) {
+      /*
+       * جدول الشيت:
+       *
+       * 1 = قلم
+       * 2 = ممحاة
+       * 3 = دفتر
+       *
+       * نحولها إلى:
+       *
+       * 001
+       * 002
+       * 003
+       */
 
-          return;
-
-        }
-
-
-        const barcode =
-          String(number)
-            .padStart(3, "0");
+      const productNumber =
+        parseInt(
+          product.barcode,
+          10
+        );
 
 
-        products[barcode] = {
+      if (isNaN(productNumber)) {
 
-          name:
-            product.name,
-
-          price:
-            Number(product.price),
-
-          stock:
-            Number(product.stock)
-
-        };
+        return;
 
       }
-    );
+
+
+      const barcode =
+        String(productNumber)
+          .padStart(3, "0");
+
+
+      products[barcode] = {
+
+        name:
+          product.name,
+
+        price:
+          Number(product.price),
+
+        stock:
+          Number(product.stock)
+
+      };
+
+    });
 
 
     document.getElementById(
@@ -317,33 +343,42 @@ async function loadProducts() {
     ).innerHTML =
 
       "✅ تم تحميل المنتجات: " +
-      result.products.length;
+      data.length;
 
   }
 
 
   catch (error) {
 
-    console.error(error);
+    console.error(
+      "خطأ تحميل المنتجات:",
+      error
+    );
 
 
     document.getElementById(
       "loading"
     ).innerHTML =
 
-      "❌ تعذر تحميل المنتجات";
+      "❌ تعذر تحميل المنتجات<br><br>" +
+
+      error.message;
 
   }
 
 }
 
 
+/*
+ * تحميل المنتجات عند فتح المتجر
+ */
+
 loadProducts();
 
 
-/* =====================================
+/* =========================================
    تشغيل الكاميرا
-===================================== */
+========================================= */
 
 async function startScanner() {
 
@@ -368,6 +403,10 @@ async function startScanner() {
     "📷 جاري تشغيل الكاميرا...";
 
 
+  /*
+   * إيقاف أي ماسح سابق
+   */
+
   if (scanner) {
 
     try {
@@ -376,7 +415,11 @@ async function startScanner() {
 
     }
 
-    catch (e) {}
+    catch (e) {
+
+      console.log(e);
+
+    }
 
   }
 
@@ -398,13 +441,23 @@ async function startScanner() {
         width: 250,
         height: 150
       }
+
     },
+
 
     async function(decodedText) {
 
 
+      /*
+       * إضافة المنتج
+       */
+
       addProduct(decodedText);
 
+
+      /*
+       * إيقاف الكاميرا
+       */
 
       try {
 
@@ -425,42 +478,61 @@ async function startScanner() {
 
     },
 
+
     function(errorMessage) {
 
-      // تجاهل أخطاء القراءة المؤقتة
+      /*
+       * تجاهل أخطاء القراءة المؤقتة
+       */
 
     }
 
-  ).catch(function(error) {
+  )
+
+
+  .catch(function(error) {
 
     console.error(error);
+
 
     document.getElementById(
       "result"
     ).innerHTML =
 
-      "❌ لم نستطع تشغيل الكاميرا";
+      "❌ لم نستطع تشغيل الكاميرا<br><br>" +
+
+      error;
 
   });
 
 }
 
 
-/* =====================================
+/* =========================================
    إضافة المنتج
-===================================== */
+========================================= */
 
 function addProduct(barcode) {
 
 
-  const number =
+  /*
+   * قراءة الباركود كما هو.
+   *
+   * إذا كانت الكاميرا تقرأ:
+   * 1
+   *
+   * نحولها إلى:
+   * 001
+   */
+
+  const productNumber =
     parseInt(
       String(barcode).trim(),
       10
     );
 
 
-  if (isNaN(number)) {
+  if (isNaN(productNumber)) {
 
     document.getElementById(
       "result"
@@ -473,14 +545,8 @@ function addProduct(barcode) {
   }
 
 
-  /*
-   * 1  → 001
-   * 2  → 002
-   * 3  → 003
-   */
-
   const normalizedBarcode =
-    String(number)
+    String(productNumber)
       .padStart(3, "0");
 
 
@@ -496,28 +562,28 @@ function addProduct(barcode) {
 
       "❌ هذا الباركود غير مسجل<br><br>" +
 
-      "الباركود: <strong>" +
+      "الباركود: " +
 
-      normalizedBarcode +
-
-      "</strong>";
+      normalizedBarcode;
 
     return;
 
   }
 
 
+  /*
+   * البحث عن المنتج في السلة
+   */
+
   const existing =
-    cart.find(
-      function(item) {
+    cart.find(function(item) {
 
-        return (
-          item.barcode ===
-          normalizedBarcode
-        );
+      return (
+        item.barcode ===
+        normalizedBarcode
+      );
 
-      }
-    );
+    });
 
 
   if (existing) {
@@ -525,6 +591,7 @@ function addProduct(barcode) {
     existing.quantity++;
 
   }
+
 
   else {
 
@@ -561,22 +628,26 @@ function addProduct(barcode) {
 }
 
 
-/* =====================================
+/* =========================================
    حذف منتج
-===================================== */
+========================================= */
 
 function deleteProduct(index) {
 
-  cart.splice(index, 1);
+  cart.splice(
+    index,
+    1
+  );
+
 
   showCart();
 
 }
 
 
-/* =====================================
+/* =========================================
    تغيير الكمية
-===================================== */
+========================================= */
 
 function changeQuantity(
   index,
@@ -599,7 +670,10 @@ function changeQuantity(
     cart[index].quantity <= 0
   ) {
 
-    cart.splice(index, 1);
+    cart.splice(
+      index,
+      1
+    );
 
   }
 
@@ -609,9 +683,9 @@ function changeQuantity(
 }
 
 
-/* =====================================
+/* =========================================
    عرض السلة
-===================================== */
+========================================= */
 
 function showCart() {
 
@@ -675,10 +749,12 @@ function showCart() {
           الكمية:
 
           <button
-            onclick="changeQuantity(
-              ${index},
-              -1
-            )"
+            onclick="
+              changeQuantity(
+                ${index},
+                -1
+              )
+            "
           >
             −
           </button>
@@ -686,10 +762,12 @@ function showCart() {
           ${item.quantity}
 
           <button
-            onclick="changeQuantity(
-              ${index},
-              1
-            )"
+            onclick="
+              changeQuantity(
+                ${index},
+                1
+              )
+            "
           >
             +
           </button>
@@ -705,9 +783,11 @@ function showCart() {
 
           <button
             class="delete"
-            onclick="deleteProduct(
-              ${index}
-            )"
+            onclick="
+              deleteProduct(
+                ${index}
+              )
+            "
           >
             🗑️ حذف
           </button>
@@ -732,9 +812,9 @@ function showCart() {
 }
 
 
-/* =====================================
-   إصدار وحفظ الفاتورة
-===================================== */
+/* =========================================
+   إصدار الفاتورة وحفظها
+========================================= */
 
 function createInvoice() {
 
@@ -750,9 +830,17 @@ function createInvoice() {
   }
 
 
+  /*
+   * رقم الفاتورة
+   */
+
   const invoiceNumber =
     Date.now();
 
+
+  /*
+   * التاريخ والوقت
+   */
 
   const now =
     new Date();
@@ -768,13 +856,17 @@ function createInvoice() {
 
   let total = 0;
 
-  let rows = [];
+  let rows = "";
 
 
   const productNames = [];
 
   const quantities = [];
 
+
+  /*
+   * تجهيز المنتجات
+   */
 
   cart.forEach(
     function(item) {
@@ -799,7 +891,7 @@ function createInvoice() {
       );
 
 
-      rows.push(`
+      rows += `
 
         <tr>
 
@@ -821,41 +913,14 @@ function createInvoice() {
 
         </tr>
 
-      `);
+      `;
 
     }
   );
 
 
   /*
-   * بيانات الفاتورة
-   */
-
-  const invoiceData = {
-
-    invoiceNumber:
-      invoiceNumber,
-
-    date:
-      date,
-
-    products:
-      productNames.join("، "),
-
-    quantities:
-      quantities.join("، "),
-
-    total:
-      total,
-
-    time:
-      time
-
-  };
-
-
-  /*
-   * عرض الفاتورة
+   * عرض الفاتورة أولًا
    */
 
   document.getElementById(
@@ -868,21 +933,31 @@ function createInvoice() {
         🧾 فاتورة شراء
       </h2>
 
+
       <p>
+
         رقم الفاتورة:
+
         <strong>
           ${invoiceNumber}
         </strong>
+
       </p>
 
+
       <p>
+
         التاريخ:
         ${date}
+
       </p>
 
+
       <p>
+
         الوقت:
         ${time}
+
       </p>
 
 
@@ -908,31 +983,38 @@ function createInvoice() {
 
         </tr>
 
-        ${rows.join("")}
+
+        ${rows}
 
       </table>
 
 
       <h2>
+
         المجموع النهائي:
         ${total}
+
       </h2>
 
 
-      <div
+      <p
         id="saveStatus"
         class="status"
       >
-        ⏳ جاري حفظ الفاتورة...
-      </div>
+        ⏳ جاري حفظ الفاتورة في الشيت...
+
+      </p>
 
 
       <button
         class="print-button"
         onclick="window.print()"
       >
+
         🖨️ طباعة الفاتورة
+
       </button>
+
 
     </div>
 
@@ -940,7 +1022,7 @@ function createInvoice() {
 
 
   /*
-   * بناء رابط الحفظ
+   * تجهيز رابط الحفظ
    */
 
   const params =
@@ -996,47 +1078,77 @@ function createInvoice() {
 
 
   /*
-   * إرسال طلب الحفظ.
+   * =====================================
+   * إرسال طلب الحفظ
    *
-   * لا نستخدم fetch هنا.
-   * نفتح الطلب كصورة مخفية حتى لا
-   * يمنعه المتصفح من الصفحة.
+   * نستخدم iframe مخفي بدل fetch POST.
+   * هذا لا يعتمد على CORS.
+   * =====================================
    */
 
-  const saveRequest =
+  const iframe =
     document.createElement(
-      "img"
+      "iframe"
     );
 
 
-  saveRequest.style.display =
+  iframe.style.display =
     "none";
 
 
-  saveRequest.src =
+  iframe.style.width =
+    "1px";
+
+
+  iframe.style.height =
+    "1px";
+
+
+  iframe.src =
     saveUrl;
 
 
   document.body.appendChild(
-    saveRequest
+    iframe
   );
 
 
   /*
-   * نعطي Apps Script وقتًا لمعالجة
-   * الطلب ثم نعرض رسالة نجاح.
+   * بعد إعطاء Apps Script وقتًا للحفظ
    */
 
   setTimeout(
     function() {
 
-      document.getElementById(
-        "saveStatus"
-      ).innerHTML =
 
-        "✅ تم إرسال الفاتورة للحفظ";
+      const status =
+        document.getElementById(
+          "saveStatus"
+        );
 
-      saveRequest.remove();
+
+      if (status) {
+
+        status.innerHTML =
+
+          "✅ تم إرسال الفاتورة للحفظ في الشيت";
+
+      }
+
+
+      /*
+       * حذف iframe
+       */
+
+      setTimeout(
+        function() {
+
+          iframe.remove();
+
+        },
+        3000
+      );
+
 
     },
     2500
